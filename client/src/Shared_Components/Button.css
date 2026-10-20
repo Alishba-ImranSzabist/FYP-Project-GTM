@@ -1,0 +1,71 @@
+.btn {
+  --btn-bg: var(--color-primary);
+  --btn-fg: var(--color-white);
+  --btn-border: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border: 1.5px solid var(--btn-border);
+  border-radius: var(--radius-md);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast), box-shadow var(--motion-base) var(--motion-ease),
+    border-color var(--motion-fast);
+}
+
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.btn--sm { padding: 0.65rem 1.05rem; font-size: var(--text-sm); }
+.btn--md { padding: 0.9rem 1.45rem; font-size: 0.95rem; }
+.btn--lg { padding: 1.1rem 1.9rem; font-size: var(--text-base); border-radius: var(--radius-lg); }
+.btn--full { width: 100%; }
+
+.btn--primary { box-shadow: var(--shadow-teal-glow); }
+.btn--primary:hover { --btn-bg: var(--color-primary-hover); }
+
+.btn--accent {
+  --btn-bg: var(--color-accent);
+  --btn-fg: var(--color-primary-deep);
+  box-shadow: var(--shadow-glow);
+}
+.btn--accent:hover { --btn-bg: var(--color-accent-hover); }
+
+.btn--outline {
+  --btn-bg: transparent;
+  --btn-fg: var(--color-primary);
+  --btn-border: var(--color-primary);
+}
+.btn--outline:hover { --btn-bg: var(--color-primary-soft); }
+
+.btn--ghost {
+  --btn-bg: transparent;
+  --btn-fg: var(--color-heading);
+}
+.btn--ghost:hover { --btn-bg: var(--color-primary-soft); transform: none; }
+
+.btn--light {
+  --btn-bg: var(--color-white);
+  --btn-fg: var(--color-primary-deep);
+  box-shadow: var(--shadow-md);
+}
+.btn--light:hover { --btn-bg: var(--color-cream-50); }
+
+.btn__arrow { transition: transform var(--motion-fast) var(--motion-ease); }
+.btn:hover .btn__arrow { transform: translateX(4px); }
+
+.btn__spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+}
+@keyframes btn-spin { to { transform: rotate(360deg); } }
