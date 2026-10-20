@@ -41,5 +41,13 @@ export default function useAuthForm({ initialValues, validate, onSubmit }) {
     }
   };
 
-  return { values, errors, formError, submitting, setValue, handleChange, handleSubmit };
+  /** Replace all values (e.g. after async data loads) and clear messages. */
+  const reset = (nextValues) => {
+    setValues(nextValues);
+    setErrors({});
+    setFormError("");
+    setSubmitting(false);
+  };
+
+  return { values, errors, formError, submitting, setValue, handleChange, handleSubmit, reset };
 }

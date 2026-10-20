@@ -5,6 +5,7 @@ import Button from "../../../Shared_Components/Button";
 import { ROUTES, USER_ROLES } from "../../../constants/routes";
 import useAuth from "../../Auth/Hooks/useAuth";
 import { PANEL_CONFIG } from "../panelConfig";
+import { ROLE_PROFILE_CONFIG } from "../roleProfile";
 import "../../Auth/Auth.css";
 import "../Panel.css";
 
@@ -70,6 +71,12 @@ export default function SignupSuccessPage() {
         <Button variant="primary" size="lg" fullWidth arrow onClick={enterPanel}>
           Enter my dashboard
         </Button>
+
+        {ROLE_PROFILE_CONFIG[user.role] && (
+          <Button variant="outline" size="lg" fullWidth to={ROUTES.profileSetup}>
+            Set up my profile
+          </Button>
+        )}
 
         <p className="done__alt">
           <Link to={ROUTES.home}>

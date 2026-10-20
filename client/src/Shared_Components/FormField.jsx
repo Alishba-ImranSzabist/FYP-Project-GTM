@@ -2,11 +2,20 @@ import { useId, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import "./FormField.css";
 
-/** Labelled input with inline error + password show/hide. */
-export default function FormField({ label, error, hint, type = "text", icon: Icon, ...inputProps }) {
+/** Labelled input (or multiline textarea via `multiline`) with inline error + password show/hide. */
+export default function FormField({
+  label,
+  error,
+  hint,
+  type = "text",
+  icon: Icon,
+  multiline = false,
+  rows = 5,
+  ...inputProps
+}) {
   const id = useId();
   const [show, setShow] = useState(false);
-  const isPassword = type === "password";
+  const isPassword = !multiline && type === "password";
 
   return (
     <div className={`field ${error ? "field--error" : ""}`}>
@@ -15,14 +24,25 @@ export default function FormField({ label, error, hint, type = "text", icon: Ico
       </label>
       <div className="field__control">
         {Icon && <Icon className="field__icon" size={18} aria-hidden="true" />}
-        <input
-          id={id}
-          type={isPassword && show ? "text" : type}
-          className={`field__input ${Icon ? "has-icon" : ""}`}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error || hint ? `${id}-msg` : undefined}
-          {...inputProps}
-        />
+        {multiline ? (
+          <textarea
+            id={id}
+            rows={rows}
+            className={`field__input field__input--area ${Icon ? "has-icon" : ""}`}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error || hint ? `${id}-msg` : undefined}
+            {...inputProps}
+          />
+        ) : (
+          <input
+            id={id}
+            type={isPassword && show ? "text" : type}
+            className={`field__input ${Icon ? "has-icon" : ""}`}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error || hint ? `${id}-msg` : undefined}
+            {...inputProps}
+          />
+        )}
         {isPassword && (
           <button
             type="button"

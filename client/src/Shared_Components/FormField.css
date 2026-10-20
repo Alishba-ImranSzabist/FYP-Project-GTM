@@ -27,6 +27,15 @@
 }
 
 .field__input.has-icon { padding-left: 2.8rem; }
+
+/* multiline variant (FormField multiline — used for profile descriptions) */
+.field__input--area {
+  min-height: 7rem;
+  padding-block: 0.75rem;
+  line-height: var(--leading-normal);
+  resize: vertical;
+}
+.field__input--area.has-icon { padding-top: 0.88rem; }
 .field__input::placeholder { color: var(--color-charcoal-300); }
 
 .field__input:hover { border-color: var(--color-charcoal-300); }

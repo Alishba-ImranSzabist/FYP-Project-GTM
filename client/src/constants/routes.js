@@ -8,6 +8,7 @@ export const ROUTES = Object.freeze({
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
   profile: "/profile",
+  profileSetup: "/profile/setup",
   dashboard: "/dashboard",
 });
 

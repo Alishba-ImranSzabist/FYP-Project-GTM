@@ -1,17 +1,16 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, ChevronDown, LogOut, Menu, Search, Settings, User, X } from "lucide-react";
+import { LogOut, Menu, Settings, User, X } from "lucide-react";
 import BrandMark from "../../../Shared_Components/BrandMark";
 import { ROUTES } from "../../../constants/routes";
 
 /**
  * App shell for every role panel: dark teal sidebar (brand, workspace, nav,
- * AI credits, account actions) + top bar (search, role chip, bell, avatar).
- * Nav items are visual for now — clicking one only highlights it.
+ * AI credits, account actions) + slim top bar (round avatar, profile & logout
+ * icon buttons — no dropdown, no search/bell).
  */
 export default function PanelShell({ config, user, onLogout, children }) {
   const [open, setOpen] = useState(false);
-  const [menu, setMenu] = useState(false); // avatar dropdown
   const [active, setActive] = useState(config.nav[0].items[0].label);
 
   const fullName = user?.fullName || "User";
@@ -42,7 +41,6 @@ export default function PanelShell({ config, user, onLogout, children }) {
               <strong>{wsName}</strong>
               <small>Workspace</small>
             </span>
-            <ChevronDown size={16} aria-hidden="true" />
           </div>
         </div>
 
@@ -87,10 +85,10 @@ export default function PanelShell({ config, user, onLogout, children }) {
             </button>
           </div>
 
-          <button type="button" className="pnl-side__item" onClick={() => setOpen(false)}>
+          <Link to={ROUTES.profile} className="pnl-side__item" onClick={() => setOpen(false)}>
             <Settings size={17} aria-hidden="true" />
             <span>Account settings</span>
-          </button>
+          </Link>
           <button type="button" className="pnl-side__item" onClick={onLogout}>
             <LogOut size={17} aria-hidden="true" />
             <span>Log out</span>
@@ -109,64 +107,34 @@ export default function PanelShell({ config, user, onLogout, children }) {
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          <label className="pnl-search">
-            <Search size={16} aria-hidden="true" />
-            <input type="search" placeholder="Search leads, campaigns, messages…" aria-label="Search" />
-          </label>
-
           <div className="pnl__top-right">
-            <button type="button" className="pnl-bell" aria-label="Notifications">
-              <Bell size={18} />
-              <em />
+            <span className="pnl-user">
+              <span className="pnl-user__avatar">
+                {user?.avatar ? <img src={user.avatar} alt="" /> : initials}
+              </span>
+              <span className="pnl-user__meta">
+                <strong>{fullName}</strong>
+                <small>{config.roleLabel}</small>
+              </span>
+            </span>
+
+            <Link
+              to={ROUTES.profile}
+              className="pnl-iconbtn pnl-iconbtn--teal"
+              title="Profile"
+              aria-label="Profile"
+            >
+              <User size={18} aria-hidden="true" />
+            </Link>
+            <button
+              type="button"
+              className="pnl-iconbtn pnl-iconbtn--danger"
+              onClick={onLogout}
+              title="Log out"
+              aria-label="Log out"
+            >
+              <LogOut size={18} aria-hidden="true" />
             </button>
-
-            <div className="pnl-userbox">
-              <button
-                type="button"
-                className="pnl-user"
-                aria-haspopup="menu"
-                aria-expanded={menu}
-                onClick={() => setMenu((m) => !m)}
-              >
-                <span className="pnl-user__avatar">
-                  {user?.avatar ? <img src={user.avatar} alt="" /> : initials}
-                </span>
-                <span className="pnl-user__meta">
-                  <strong>{fullName}</strong>
-                </span>
-                <ChevronDown size={15} aria-hidden="true" />
-              </button>
-
-              {menu && (
-                <>
-                  <div className="pnl-usermenu__backdrop" onClick={() => setMenu(false)} />
-                  <div className="pnl-usermenu" role="menu">
-                    <div className="pnl-usermenu__head">
-                      <strong>{fullName}</strong>
-                      <small>{user?.email}</small>
-                    </div>
-                    <Link
-                      to={ROUTES.profile}
-                      className="pnl-usermenu__item"
-                      role="menuitem"
-                      onClick={() => setMenu(false)}
-                    >
-                      <User size={16} aria-hidden="true" />
-                      Profile
-                    </Link>
-                    <button
-                      type="button"
-                      className="pnl-usermenu__item pnl-usermenu__item--danger"
-                      role="menuitem"
-                      onClick={onLogout}
-                    >
-                      <LogOut size={16} aria-hidden="true" />
-                      Log out
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
         </header>
 

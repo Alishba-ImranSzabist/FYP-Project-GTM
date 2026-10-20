@@ -1,7 +1,12 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
-import { ROUTES } from "./constants/routes";
+import SignupSuccessPage from "./Features/Panel/Pages/SignupSuccessPage";
+import ProfilePage from "./Features/Panel/Pages/ProfilePage";
+import ProfileSetupPage from "./Features/Panel/Pages/ProfileSetupPage";
+import ProtectedRoute from "./Features/Auth/components/ProtectedRoute";
+import DashboardPage from "./Features/Dashboard/Pages/DashboardPage";
+import { ROUTES, USER_ROLES } from "./constants/routes";
 import HomePage from "./Features/Home/Pages/HomePage";
 import LoginPage from "./Features/Auth/Pages/LoginPage";
 import VerifyLoginPage from "./Features/Auth/Pages/VerifyLoginPage";
@@ -9,10 +14,6 @@ import SignupPage from "./Features/Auth/Pages/SignupPage";
 import VerifyEmailPage from "./Features/Auth/Pages/VerifyEmailPage";
 import ForgotPasswordPage from "./Features/Auth/Pages/ForgotPasswordPage";
 import ResetPasswordPage from "./Features/Auth/Pages/ResetPasswordPage";
-import SignupSuccessPage from "./Features/Panel/Pages/SignupSuccessPage";
-import ProfilePage from "./Features/Panel/Pages/ProfilePage";
-import ProtectedRoute from "./Features/Auth/components/ProtectedRoute";
-import DashboardPage from "./Features/Dashboard/Pages/DashboardPage";
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -47,6 +48,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.profileSetup}
+          element={
+            <ProtectedRoute roles={[USER_ROLES.business, USER_ROLES.serviceProvider]}>
+              <ProfileSetupPage />
             </ProtectedRoute>
           }
         />

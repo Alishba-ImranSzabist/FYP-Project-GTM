@@ -35,4 +35,9 @@ async function request(path, { method = "GET", body } = {}) {
 
 export const profileService = {
   updateProfile: (payload) => request("/users/me", { method: "PATCH", body: payload }),
+
+  // Role-specific profile: GET /profiles/me returns { role, profile } (profile is
+  // null until created); POST is an idempotent create-or-update save.
+  getRoleProfile: () => request("/profiles/me"),
+  saveRoleProfile: (payload) => request("/profiles/me", { method: "POST", body: payload }),
 };
