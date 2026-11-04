@@ -171,17 +171,25 @@
   background: var(--color-white);
   color: var(--color-heading);
 }
+.pnl__top-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: var(--weight-bold);
+  color: var(--color-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .pnl__top-right { margin-left: auto; display: flex; align-items: center; gap: 0.7rem; }
 /* role chip removed — roles are no longer shown to users */
 
-/* static user pill (round avatar) + quick profile/logout icon buttons — no dropdown */
+/* static user avatar circle + quick profile/logout icon buttons — no dropdown */
 .pnl-user {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.28rem 0.6rem 0.28rem 0.28rem;
+  display: inline-grid;
+  place-items: center;
+  padding: 0.28rem;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
+  border-radius: 50%;
   background: var(--color-white);
 }
 .pnl-user__avatar {
@@ -198,18 +206,6 @@
   font-weight: var(--weight-bold);
 }
 .pnl-user__avatar img { width: 100%; height: 100%; object-fit: cover; }
-.pnl-user__meta { display: none; }
-.pnl-user__meta strong {
-  display: block;
-  max-width: 150px;
-  font-size: 0.85rem;
-  color: var(--color-heading);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.pnl-user__meta small { font-size: 0.7rem; color: var(--color-muted); }
-@media (min-width: 1100px) { .pnl-user__meta { display: grid; } }
 
 .pnl-iconbtn {
   display: grid;

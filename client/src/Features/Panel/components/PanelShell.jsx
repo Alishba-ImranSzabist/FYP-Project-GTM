@@ -80,7 +80,14 @@ export default function PanelShell({ config, user, onLogout, children }) {
             <div className="pnl-credits__bar">
               <span style={{ width: "74.2%" }} />
             </div>
-            <button type="button" className="pnl-credits__link">
+            <button
+              type="button"
+              className="pnl-credits__link"
+              onClick={() => {
+                setActive("Plan & Billing");
+                setOpen(false);
+              }}
+            >
               View plan
             </button>
           </div>
@@ -107,14 +114,12 @@ export default function PanelShell({ config, user, onLogout, children }) {
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
 
+          <strong className="pnl__top-name">{fullName}</strong>
+
           <div className="pnl__top-right">
             <span className="pnl-user">
               <span className="pnl-user__avatar">
                 {user?.avatar ? <img src={user.avatar} alt="" /> : initials}
-              </span>
-              <span className="pnl-user__meta">
-                <strong>{fullName}</strong>
-                <small>{config.roleLabel}</small>
               </span>
             </span>
 

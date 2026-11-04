@@ -25,9 +25,9 @@ const business = {
       items: [
         { label: "Dashboard", icon: LayoutDashboard },
         { label: "Campaign Setup", icon: Megaphone },
+        { label: "AI Recommendations", icon: Sparkles },
         { label: "Data & Enrichment", icon: Database },
         { label: "Lead Qualification", icon: UserCheck },
-        { label: "AI Recommendations", icon: Sparkles },
         { label: "Lead Pipeline", icon: GitBranch },
       ],
     },
@@ -47,6 +47,12 @@ const business = {
         { label: "ROI & Conversion", icon: LineChart },
         { label: "Inventory & Sales", icon: Package },
         { label: "Inventory Alerts", icon: Bell, dot: true },
+      ],
+    },
+    {
+      section: "Account",
+      items: [
+        { label: "Plan & Billing", icon: CreditCard },
       ],
     },
   ],
@@ -135,8 +141,13 @@ const provider = {
       section: "Performance",
       items: [
         { label: "ROI & Conversion", icon: LineChart },
-        { label: "Subscription & Billing", icon: CreditCard },
         { label: "Feedback", icon: ThumbsUp },
+      ],
+    },
+    {
+      section: "Account",
+      items: [
+        { label: "Plan & Billing", icon: CreditCard },
       ],
     },
   ],
