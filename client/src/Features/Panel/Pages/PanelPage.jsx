@@ -3,11 +3,6 @@ import Button from "../../../Shared_Components/Button";
 import { ROUTES, USER_ROLES } from "../../../constants/routes";
 import useAuth from "../../Auth/Hooks/useAuth";
 import PanelShell from "../components/PanelShell";
-import StatCard from "../components/StatCard";
-import BarChartCard from "../components/BarChartCard";
-import DonutCard from "../components/DonutCard";
-import ActivityCard from "../components/ActivityCard";
-import CampaignTable from "../components/CampaignTable";
 import { PANEL_CONFIG } from "../panelConfig";
 import "../Panel.css";
 
@@ -52,20 +47,6 @@ export default function PanelPage() {
           {config.cta.label}
         </Button>
       </div>
-
-      <section className="pnl__stats" aria-label="Key metrics">
-        {config.stats.map((s) => (
-          <StatCard key={s.label} {...s} />
-        ))}
-      </section>
-
-      <div className="pnl__grid">
-        <BarChartCard {...config.chart} />
-        <DonutCard {...config.donut} />
-      </div>
-
-      <ActivityCard {...config.activity} />
-      {config.table && <CampaignTable {...config.table} />}
     </PanelShell>
   );
 }

@@ -9,6 +9,7 @@ import authRoutes from "./features/auth/auth.routes.js";
 import userRoutes from "./features/users/user.routes.js";
 import campaignRoutes from "./features/campaigns/campaign.routes.js";
 import serviceListingRoutes from "./features/serviceListings/serviceListing.routes.js";
+import profileRoutes from "./features/profiles/profile.routes.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/service-listings", serviceListingRoutes);
+app.use("/api/profiles", profileRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
