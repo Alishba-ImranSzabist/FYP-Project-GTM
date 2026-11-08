@@ -48,7 +48,7 @@ export default function PanelPage() {
           <h1>{title}</h1>
           <p>{config.subtitle}</p>
         </div>
-        <Button variant="primary" size="md" arrow icon={config.cta.icon}>
+        <Button variant="primary" size="md" arrow icon={config.cta.icon} to={config.cta.to}>
           {config.cta.label}
         </Button>
       </div>

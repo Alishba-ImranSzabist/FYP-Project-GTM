@@ -1,0 +1,9 @@
+/* Service Setup styles. Most look comes from Campaigns.css (cmp-*) and Panel.css (pnl-*).
+   Only the few things that are new live here. Colours come from the CSS variables
+   injected by constants/theme.js — never hard-code a colour. Class prefix: svc- */
+
+/* "Paused" status tag (extends .pnl-tag from Panel.css) */
+.pnl-tag--grey { background: var(--color-cream-200); color: var(--color-muted); }
+
+/* Dropdown: same look as .field__input, with room for the arrow */
+.svc-select { appearance: auto; cursor: pointer; }

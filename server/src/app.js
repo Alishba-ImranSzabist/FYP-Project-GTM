@@ -7,6 +7,8 @@ import { env } from "./config/env.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 import authRoutes from "./features/auth/auth.routes.js";
 import userRoutes from "./features/users/user.routes.js";
+import campaignRoutes from "./features/campaigns/campaign.routes.js";
+import serviceListingRoutes from "./features/serviceListings/serviceListing.routes.js";
 
 const app = express();
 
@@ -20,6 +22,8 @@ app.get("/api/health", (_req, res) => res.json({ success: true, message: "GTM AP
 // One line per feature. Add new features (jobs, applications …) here.
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/campaigns", campaignRoutes);
+app.use("/api/service-listings", serviceListingRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

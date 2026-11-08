@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { LogOut, Menu, Settings, User, X } from "lucide-react";
 import BrandMark from "../../../Shared_Components/BrandMark";
 import { ROUTES } from "../../../constants/routes";
@@ -12,6 +12,19 @@ import { ROUTES } from "../../../constants/routes";
 export default function PanelShell({ config, user, onLogout, children }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(config.nav[0].items[0].label);
+  const { pathname } = useLocation();
+
+  // Nav items with a `to` (see panelConfig.js) are real pages and highlight by URL;
+  // the others are still placeholders and highlight by click.
+  const isCurrentPage = (to) => pathname === to || pathname.startsWith(`${to}/`);
+  const itemContent = (it) => (
+    <>
+      <it.icon size={17} aria-hidden="true" />
+      <span>{it.label}</span>
+      {it.badge ? <em className="pnl-side__badge">{it.badge}</em> : null}
+      {it.dot ? <em className="pnl-side__dot" /> : null}
+    </>
+  );
 
   const fullName = user?.fullName || "User";
   const initials = fullName
@@ -51,19 +64,26 @@ export default function PanelShell({ config, user, onLogout, children }) {
               <ul>
                 {sec.items.map((it) => (
                   <li key={it.label}>
-                    <button
-                      type="button"
-                      className={`pnl-side__item ${active === it.label ? "is-active" : ""}`}
-                      onClick={() => {
-                        setActive(it.label);
-                        setOpen(false);
-                      }}
-                    >
-                      <it.icon size={17} aria-hidden="true" />
-                      <span>{it.label}</span>
-                      {it.badge ? <em className="pnl-side__badge">{it.badge}</em> : null}
-                      {it.dot ? <em className="pnl-side__dot" /> : null}
-                    </button>
+                    {it.to ? (
+                      <Link
+                        to={it.to}
+                        className={`pnl-side__item ${isCurrentPage(it.to) ? "is-active" : ""}`}
+                        onClick={() => setOpen(false)}
+                      >
+                        {itemContent(it)}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`pnl-side__item ${active === it.label ? "is-active" : ""}`}
+                        onClick={() => {
+                          setActive(it.label);
+                          setOpen(false);
+                        }}
+                      >
+                        {itemContent(it)}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>

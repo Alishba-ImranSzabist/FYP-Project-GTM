@@ -5,6 +5,7 @@ import {
   Briefcase, Mail, MessageSquare, MessageCircle, DollarSign, TrendingUp,
   Filter, Cpu, ShieldCheck, Rocket, Handshake, Activity,
 } from "lucide-react";
+import { ROUTES } from "../../constants/routes";
 
 /**
  * Per-role panel configuration. Everything the panel renders for a role comes
@@ -18,13 +19,13 @@ const business = {
   eyebrow: null, // null -> today's date, e.g. "MONDAY, 18 SEPTEMBER"
   title: null, // null -> "Good morning, <firstName>"
   subtitle: "Your pipeline is moving. Here's what needs your attention.",
-  cta: { label: "New campaign", icon: Rocket },
+  cta: { label: "New campaign", icon: Rocket, to: ROUTES.campaignNew },
   nav: [
     {
       section: "Workspace",
       items: [
-        { label: "Dashboard", icon: LayoutDashboard },
-        { label: "Campaign Setup", icon: Megaphone },
+        { label: "Dashboard", icon: LayoutDashboard, to: ROUTES.dashboard },
+        { label: "Campaigns", icon: Megaphone, to: ROUTES.campaigns },
         { label: "Data & Enrichment", icon: Database },
         { label: "Lead Qualification", icon: UserCheck },
         { label: "AI Recommendations", icon: Sparkles },
@@ -123,8 +124,8 @@ const provider = {
     {
       section: "Workspace",
       items: [
-        { label: "Provider Dashboard", icon: LayoutDashboard },
-        { label: "Service Setup", icon: Settings },
+        { label: "Provider Dashboard", icon: LayoutDashboard, to: ROUTES.dashboard },
+        { label: "Service Setup", icon: Settings, to: ROUTES.services },
         { label: "Opportunity Discovery", icon: Target },
         { label: "Matched Leads", icon: Users },
         { label: "Outreach Review", icon: Send },
@@ -200,7 +201,7 @@ const admin = {
     {
       section: "Platform",
       items: [
-        { label: "Admin Dashboard", icon: LayoutDashboard },
+        { label: "Admin Dashboard", icon: LayoutDashboard, to: ROUTES.dashboard },
         { label: "User Management", icon: Users },
         { label: "Subscription & Billing", icon: CreditCard },
         { label: "Feedback", icon: ThumbsUp },

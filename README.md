@@ -24,6 +24,7 @@ Features/
   Home/       components/ Hooks/ Pages/ data/ Home.css
   Auth/       components/ Hooks/ Pages/ Services/ Auth.css
   Dashboard/  Pages/
+  Campaigns/  components/ Hooks/ Pages/ Services/ Campaigns.css campaignConfig.js campaignForm.js campaignFormat.js
 ```
 
 Using colours: in CSS `color: var(--color-primary)`, in JS `import { COLORS } from "../constants/colour"`.
@@ -38,6 +39,7 @@ utils/        ApiError.js, response.js, generateToken.js
 features/
   auth/   auth.routes.js, auth.controller.js, auth.service.js, auth.validation.js
   users/  user.model.js, user.routes.js, user.controller.js, user.service.js, user.validation.js
+  campaigns/  campaign.constants.js, campaign.model.js, campaign.routes.js, campaign.controller.js, campaign.service.js, campaign.validation.js
 ```
 
 Add a new feature by creating `features/<name>/` with the same 4–5 files and one line in `app.js`.
@@ -52,5 +54,8 @@ Add a new feature by creating `features/<name>/` with the same 4–5 files and o
 | GET | /api/auth/me | logged in |
 | GET / PATCH | /api/users/me | logged in |
 | GET | /api/users | admin only |
+| GET / POST | /api/campaigns | business only |
+| GET / PATCH / DELETE | /api/campaigns/:id | business only (own campaigns) |
+| POST | /api/campaigns/:id/duplicate | business only |
 
 Admin sign-up needs `ADMIN_INVITE_CODE` from `server/.env`.
