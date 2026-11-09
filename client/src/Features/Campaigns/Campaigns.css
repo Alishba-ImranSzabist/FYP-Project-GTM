@@ -75,7 +75,7 @@
 }
 
 /* ---------- wizard: layout ---------- */
-.cmp-wizard { display: grid; gap: 1.25rem; max-width: 52rem; }
+.cmp-wizard { display: grid; gap: 1.25rem; max-width: 52rem; margin-inline: auto; }
 .cmp-wizard__title { font-size: var(--text-2xl); letter-spacing: var(--tracking-tight); color: var(--color-ink); }
 .cmp-wizard__intro { color: var(--color-muted); }
 .cmp-form { display: grid; gap: 1.4rem; padding: clamp(1.1rem, 3vw, 1.75rem); }
