@@ -5,6 +5,7 @@ import { generateToken } from "../../utils/generateToken.js";
 import { USER_ROLES } from "../users/user.model.js";
 import * as userService from "../users/user.service.js";
 import { issueOtp, verifyOtp, OTP_PURPOSES } from "./otp.service.js";
+import { Otp } from "./otp.model.js";
 
 const safeEqual = (a, b) => {
   const ha = crypto.createHash("sha256").update(a).digest();
@@ -32,15 +33,17 @@ export async function register(data) {
     password: data.password,
   });
 
-  // Send the 6-digit verification code. A failed email must not roll back the
-  // signup — the user can hit "Resend code" from the verify screen later.
+  // An SMTP failure must not strand an already-created account. Tell the UI
+  // that it must show a retry option instead of claiming email was delivered.
+  let verificationEmailSent = false;
   try {
     await issueOtp(user.email, OTP_PURPOSES.VERIFY_EMAIL);
+    verificationEmailSent = true;
   } catch (err) {
     console.error("Signup OTP email failed:", err.message);
   }
 
-  return { user: user.toPublic(), token: generateToken(user._id) };
+  return { user: user.toPublic(), token: generateToken(user._id), verificationEmailSent };
 }
 
 export async function login({ email, password, deviceId }) {
@@ -51,6 +54,13 @@ export async function login({ email, password, deviceId }) {
     throw ApiError.unauthorized("Incorrect email or password.");
   }
   if (!user.isActive) throw ApiError.forbidden("This account has been deactivated.");
+
+  // A user with an UNVERIFIED address must be able to log in using their
+  // password to correct a typo. The normal API middleware still blocks access
+  // to all workspace data until email verification is completed.
+  if (!user.isEmailVerified) {
+    return { user: user.toPublic(), token: generateToken(user._id) };
+  }
 
   // Unknown browser/system → email a security code before opening the session.
   const trustedEntry = deviceId ? (user.trustedDevices || []).find((d) => d.id === deviceId) : null;
@@ -97,30 +107,45 @@ export async function resendLoginCode({ email }) {
   }
 }
 
-/** POST /api/auth/verify-email — flip isEmailVerified once the code matches. */
-export async function verifyEmail({ email, code, deviceId }) {
-  const user = await userService.findByEmail(email);
-  if (!user) throw ApiError.badRequest("Invalid or expired code.");
-  if (user.isEmailVerified) return user; // already done — idempotent
+/** GET /api/auth/verification-status — source of truth for OTP cooldown. */
+export async function getVerificationStatus(user) {
+  if (user.isEmailVerified) {
+    return { email: user.email, isEmailVerified: true, resendAvailableAt: null, resendAfterSeconds: 0, hasActiveCode: false };
+  }
+  const otp = await Otp.findOne({ email: user.email, purpose: OTP_PURPOSES.VERIFY_EMAIL })
+    .select("lastSentAt expiresAt")
+    .lean();
+  const active = Boolean(otp && otp.expiresAt && otp.expiresAt.getTime() > Date.now());
+  return {
+    email: user.email,
+    isEmailVerified: false,
+    resendAvailableAt: active && otp.lastSentAt
+      ? new Date(otp.lastSentAt.getTime() + env.otp.cooldownSeconds * 1000).toISOString()
+      : null,
+    resendAfterSeconds: active && otp.lastSentAt
+      ? Math.max(0, Math.ceil((otp.lastSentAt.getTime() + env.otp.cooldownSeconds * 1000 - Date.now()) / 1000))
+      : 0,
+    hasActiveCode: active,
+  };
+}
 
-  await verifyOtp(email, OTP_PURPOSES.VERIFY_EMAIL, code);
+/** OTP must belong to the currently authenticated account. */
+export async function verifyEmail(user, { email, code, deviceId }) {
+  if (user.email !== email) throw ApiError.badRequest("Your email changed. Reload the page and try again.");
+  if (user.isEmailVerified) return user;
 
+  await verifyOtp(user.email, OTP_PURPOSES.VERIFY_EMAIL, code);
   user.isEmailVerified = true;
   await user.save({ validateBeforeSave: false });
-  // The browser that just proved ownership of the email becomes a trusted device,
-  // so the very next login there doesn't need another code.
   if (deviceId) await userService.trustDevice(user._id, deviceId);
   return user;
 }
 
-/** POST /api/auth/resend-verification — re-send the signup code (respects the cooldown). */
-export async function resendVerification({ email }) {
-  const user = await userService.findByEmail(email);
-  // Same generic behaviour as forgot-password: don't reveal which emails exist.
-  if (!user) return;
+/** Resend only for the authenticated user's own unverified address. */
+export async function resendVerification(user) {
   if (user.isEmailVerified) throw ApiError.badRequest("This email is already verified.");
-
-  await issueOtp(email, OTP_PURPOSES.VERIFY_EMAIL);
+  await issueOtp(user.email, OTP_PURPOSES.VERIFY_EMAIL);
+  return getVerificationStatus(user);
 }
 
 /**
@@ -143,4 +168,40 @@ export async function resetPassword({ email, code, newPassword }) {
 
   user.password = newPassword; // pre-save hook re-hashes it
   await user.save();
+}
+
+/** Edit only the unverified account. Saving an address is not a resend click. */
+export async function changeVerificationEmail(user, rawEmail) {
+  const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+    throw ApiError.badRequest("Enter a valid email address.");
+  }
+  if (user.isEmailVerified) throw ApiError.badRequest("Email is already verified.");
+  if (email === user.email) {
+    return { user, emailSent: false, status: await getVerificationStatus(user) };
+  }
+
+  const existing = await userService.findByEmail(email);
+  if (existing) throw ApiError.conflict("This email is already registered.", { email: "Email already registered." });
+
+  const oldEmail = user.email;
+  user.email = email;
+  try {
+    await user.save();
+  } catch (err) {
+    if (err.code === 11000) throw ApiError.conflict("This email is already registered.");
+    throw err;
+  }
+  // Old address can no longer verify this account.
+  await Otp.deleteMany({ email: oldEmail, purpose: OTP_PURPOSES.VERIFY_EMAIL });
+
+  let emailSent = false;
+  try {
+    await issueOtp(email, OTP_PURPOSES.VERIFY_EMAIL);
+    emailSent = true;
+  } catch (err) {
+    // Address remains updated. Return an honest emailSent flag; users can resend.
+    console.error("Corrected-address OTP email failed:", err.message);
+  }
+  return { user, emailSent, status: await getVerificationStatus(user) };
 }

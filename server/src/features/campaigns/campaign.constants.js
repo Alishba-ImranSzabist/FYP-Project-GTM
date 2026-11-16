@@ -23,6 +23,8 @@ export const AUDIENCE_TYPES = Object.freeze(["b2c", "b2b", "both", "customers"])
 export const CAMPAIGN_CHANNELS = Object.freeze(["email", "instagram"]);
 
 export const DEFAULT_CURRENCY = "PKR";
+// Use the same date-only calendar timezone as client campaignConfig.js.
+export const CAMPAIGN_TIME_ZONE = "Asia/Karachi";
 
 export const CAMPAIGN_LIMITS = Object.freeze({
   name: 120,

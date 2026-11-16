@@ -12,7 +12,7 @@ import {
  * A service provider owns many services (User 1 : N ServiceListing).
  * Fields are grouped by the wizard step that fills them in.
  *
- * Drafts may be incomplete, so only `userId` and `name` are required here.
+ * Drafts may be incomplete, so only `userId` is required here.
  * The "ready for AI matching" rules live in serviceListing.validation.js.
  */
 const serviceListingSchema = new mongoose.Schema(
@@ -21,7 +21,12 @@ const serviceListingSchema = new mongoose.Schema(
     status: { type: String, enum: Object.values(SERVICE_STATUS), default: SERVICE_STATUS.DRAFT },
 
     // Step 1 — What you offer
-    name: { type: String, required: true, trim: true, minlength: 2, maxlength: LIMIT.name },
+    name: { type: String, default: "", trim: true, maxlength: LIMIT.name, validate: {
+      validator(value) { return this.status === SERVICE_STATUS.DRAFT || String(value || "").trim().length >= 2; },
+      message: "Enter a service name (2+ characters).",
+    } },
+    // Restore the exact wizard step across devices and logins.
+    wizardStep: { type: Number, min: 0, max: 2, default: 0 },
     category: { type: String, enum: SERVICE_CATEGORIES },
     customCategory: { type: String, trim: true, maxlength: LIMIT.customCategory }, // only used when category = "other"
     description: { type: String, trim: true, maxlength: LIMIT.description },

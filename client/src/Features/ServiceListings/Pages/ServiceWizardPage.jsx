@@ -28,6 +28,7 @@ export default function ServiceWizardPage() {
   const config = PANEL_CONFIG[USER_ROLES.serviceProvider];
 
   const handleLogout = async () => {
+    await wizard.flushDraft(); // best effort: local cache remains if offline
     await logout();
     navigate(ROUTES.home, { replace: true });
   };
@@ -55,7 +56,7 @@ export default function ServiceWizardPage() {
 
   return (
     <PanelShell config={config} user={user} onLogout={handleLogout}>
-      <div className="cmp-wizard">
+      <div className="cmp-wizard svc-wizard">
         {wizard.loading ? (
           <section className="pnl-card" aria-busy="true" aria-label="Loading service">
             <span className="prof__skeleton prof__skeleton--title" />
@@ -87,8 +88,8 @@ export default function ServiceWizardPage() {
 
               <div className="cmp-actions">
                 {stepIndex === 0 ? (
-                  <Button variant="ghost" size="sm" to={ROUTES.services} disabled={saving}>
-                    Cancel
+                  <Button type="button" variant="ghost" size="sm" onClick={wizard.leave} disabled={saving}>
+                    Back to services
                   </Button>
                 ) : (
                   <Button type="button" variant="ghost" size="sm" onClick={wizard.goBack} disabled={saving}>

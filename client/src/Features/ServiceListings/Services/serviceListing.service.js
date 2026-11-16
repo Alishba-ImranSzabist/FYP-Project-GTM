@@ -37,6 +37,7 @@ async function request(path, { method = "GET", body } = {}) {
 export const serviceListingService = {
   /** -> { services, total, page, pages } */
   list: ({ page = 1, limit = 20 } = {}) => request(`/service-listings?${new URLSearchParams({ page, limit })}`),
+  recentDraft: () => request("/service-listings/draft/recent"), // -> { service: ServiceListing | null }
   get: (id) => request(`/service-listings/${id}`), // -> { service }
   create: (payload) => request("/service-listings", { method: "POST", body: payload }),
   update: (id, payload) => request(`/service-listings/${id}`, { method: "PATCH", body: payload }),

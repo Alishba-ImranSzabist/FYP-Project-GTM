@@ -7,6 +7,9 @@
  */
 
 export const CURRENCY = "PKR";
+// Date-only campaigns use one calendar timezone in both browser and server.
+// Keep this in sync with server/src/features/campaigns/campaign.constants.js.
+export const CAMPAIGN_TIME_ZONE = "Asia/Karachi";
 
 export const CAMPAIGN_LIMITS = Object.freeze({
   name: 120,

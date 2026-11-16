@@ -6,6 +6,8 @@
  * Keep the values in sync with the server: server/src/features/serviceListings/serviceListing.constants.js
  */
 
+export const AUTOSAVE_DELAY_MS = 1000; // Delay between typing and a MongoDB draft update.
+
 export const SERVICE_LIMITS = Object.freeze({
   name: 120,
   customCategory: 60,

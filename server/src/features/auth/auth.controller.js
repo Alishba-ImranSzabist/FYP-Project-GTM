@@ -3,15 +3,14 @@ import { clearAuthCookie, setAuthCookie } from "../../utils/generateToken.js";
 import * as authService from "./auth.service.js";
 
 export const register = asyncHandler(async (req, res) => {
-  const { user, token } = await authService.register(req.body);
+  const { user, token, verificationEmailSent } = await authService.register(req.body);
   setAuthCookie(res, token);
-  sendSuccess(res, { user }, "Account created.", 201);
+  sendSuccess(res, { user, verificationEmailSent }, "Account created.", 201);
 });
 
 export const login = asyncHandler(async (req, res) => {
   const result = await authService.login(req.body);
   if (result.requiresVerification) {
-    // Unknown device: no cookie yet — client must collect the emailed code first.
     return sendSuccess(res, { requiresVerification: true }, "We emailed you a security code.");
   }
   setAuthCookie(res, result.token);
@@ -30,19 +29,31 @@ export const resendLoginCode = asyncHandler(async (req, res) => {
 });
 
 export const verifyEmail = asyncHandler(async (req, res) => {
-  const user = await authService.verifyEmail(req.body);
+  const user = await authService.verifyEmail(req.user, req.body);
   sendSuccess(res, { user: user.toPublic() }, "Email verified.");
 });
 
+export const verificationStatus = asyncHandler(async (req, res) => {
+  const status = await authService.getVerificationStatus(req.user);
+  sendSuccess(res, status);
+});
+
 export const resendVerification = asyncHandler(async (req, res) => {
-  await authService.resendVerification(req.body);
-  // Always this message — even when no user matched (don't leak which emails exist).
-  sendSuccess(res, null, "If that email needs a code, we've sent one.");
+  const status = await authService.resendVerification(req.user);
+  sendSuccess(res, status, "A verification code was sent to your current address.");
+});
+
+export const changeVerificationEmail = asyncHandler(async (req, res) => {
+  const result = await authService.changeVerificationEmail(req.user, req.body.email);
+  sendSuccess(
+    res,
+    { user: result.user.toPublic(), emailSent: result.emailSent, status: result.status },
+    result.emailSent ? "Email updated and code sent." : "Email updated. Please request a verification code.",
+  );
 });
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   await authService.forgotPassword(req.body);
-  // Generic message for the same anti-enumeration reason as above.
   sendSuccess(res, null, "If that email has an account, we've sent a 6-digit code.");
 });
 

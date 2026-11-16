@@ -1,5 +1,4 @@
-/** All HTTP calls for the Auth feature live here. Components never call fetch directly. */
-
+/** Auth HTTP calls share one error handler; all session requests include cookies. */
 import { getDeviceId } from "./deviceId";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
@@ -18,7 +17,7 @@ async function request(path, { method = "GET", body } = {}) {
   try {
     res = await fetch(`${API_URL}${path}`, {
       method,
-      credentials: "include", // sends / receives the httpOnly auth cookie
+      credentials: "include",
       headers: body ? { "Content-Type": "application/json" } : undefined,
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -38,7 +37,6 @@ async function request(path, { method = "GET", body } = {}) {
 
 export const authService = {
   register: (payload) => request("/auth/register", { method: "POST", body: payload }),
-  // deviceId travels with login so the server can recognize a known browser
   login: (payload) => request("/auth/login", { method: "POST", body: { ...payload, deviceId: getDeviceId() } }),
   verifyLogin: (payload) =>
     request("/auth/verify-login", { method: "POST", body: { ...payload, deviceId: getDeviceId() } }),
@@ -46,10 +44,12 @@ export const authService = {
   logout: () => request("/auth/logout", { method: "POST" }),
   me: () => request("/auth/me"),
 
-  // OTP: email verification + password reset
   verifyEmail: (payload) =>
     request("/auth/verify-email", { method: "POST", body: { ...payload, deviceId: getDeviceId() } }),
-  resendVerification: (payload) => request("/auth/resend-verification", { method: "POST", body: payload }),
+  verificationStatus: () => request("/auth/verification-status"),
+  changeVerificationEmail: (email) => request("/auth/verification-email", { method: "PATCH", body: { email } }),
+  // Resend is tied to the authenticated account on the server, not a free-form email.
+  resendVerification: () => request("/auth/resend-verification", { method: "POST" }),
   forgotPassword: (payload) => request("/auth/forgot-password", { method: "POST", body: payload }),
   resetPassword: (payload) => request("/auth/reset-password", { method: "POST", body: payload }),
 };

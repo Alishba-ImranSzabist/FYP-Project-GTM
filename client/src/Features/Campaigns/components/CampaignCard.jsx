@@ -13,7 +13,7 @@ export default function CampaignCard({ campaign, busy, onDuplicate, onDelete }) 
   // "Generate leads · Lahore, Karachi · 10 Nov – 10 Dec" (parts that are empty are skipped)
   const summary = [
     labelOf(OBJECTIVE_OPTIONS, campaign.objective),
-    campaign.targetLocations.join(", "),
+    (campaign.targetLocations || []).join(", "),
     formatDateRange(campaign.startDate, campaign.endDate),
   ]
     .filter(Boolean)
@@ -23,7 +23,7 @@ export default function CampaignCard({ campaign, busy, onDuplicate, onDelete }) 
     <article className="pnl-card cmp-card" aria-busy={busy}>
       <div className="cmp-card__main">
         <div className="cmp-card__title">
-          <h3>{campaign.name}</h3>
+          <h3>{campaign.name?.trim() || "Untitled campaign"}</h3>
           <span className={`pnl-tag pnl-tag--${status.tone}`}>{status.label}</span>
         </div>
         {summary && <p className="cmp-card__meta">{summary}</p>}

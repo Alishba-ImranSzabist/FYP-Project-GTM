@@ -8,7 +8,7 @@ export default function StepDetails({ form }) {
   const { values, errors, handleChange, setValue, saving } = form;
 
   return (
-    <div className="cmp-grid">
+    <div className="cmp-grid svc-details-grid">
       <div className="cmp-cell">
         <SelectField
           label="Experience"
@@ -35,11 +35,12 @@ export default function StepDetails({ form }) {
         />
       </div>
 
-      <div className="cmp-cell">
+      <div className="cmp-cell svc-rate-cell">
         <FormField
-          label="Typical rate"
+          label="Typical rate (optional)"
           name="rate"
-          placeholder="e.g. PKR 10,000 per video"
+          placeholder="e.g. PKR 10,000 per video or Negotiable"
+          hint="Enter a positive rate, or type Negotiable."
           maxLength={L.rate}
           value={values.rate}
           onChange={handleChange}

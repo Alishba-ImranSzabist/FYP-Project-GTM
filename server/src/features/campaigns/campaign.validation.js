@@ -3,6 +3,7 @@ import {
   AUDIENCE_TYPES,
   CAMPAIGN_CHANNELS,
   CAMPAIGN_LIMITS as LIMIT,
+  CAMPAIGN_TIME_ZONE,
   CAMPAIGN_OBJECTIVES,
   CAMPAIGN_STATUS,
 } from "./campaign.constants.js";
@@ -32,10 +33,26 @@ const textList = (maxItems, maxLength, label) =>
     .max(maxItems, `You can add up to ${maxItems} ${label.toLowerCase()}s.`);
 
 // Dates travel as "YYYY-MM-DD" (what <input type="date"> gives us).
+const isRealDate = (value) => {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+};
+
 const dateOnly = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date.")
-  .refine((value) => !Number.isNaN(Date.parse(value)), "Enter a valid date.");
+  .refine(isRealDate, "Enter a valid date.");
+
+function campaignToday(now = new Date()) {
+  const pieces = new Intl.DateTimeFormat("en-GB", {
+    timeZone: CAMPAIGN_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const parts = Object.fromEntries(pieces.map(({ type, value }) => [type, value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
 
 /** Fields that must be filled in before a campaign can be ACTIVE. Drafts may leave them empty. */
 const REQUIRED_TO_LAUNCH = {
@@ -56,12 +73,23 @@ const isBlank = (value) =>
 function checkCampaignRules(campaign, ctx) {
   const fail = (field, message) => ctx.addIssue({ code: "custom", path: [field], message });
 
-  // "YYYY-MM-DD" strings compare correctly as text.
-  if (campaign.startDate && campaign.endDate && campaign.endDate < campaign.startDate) {
-    fail("endDate", "End date must be on or after the start date.");
+  const today = campaignToday();
+  if (campaign.startDate && campaign.startDate < today) {
+    fail("startDate", "Start date cannot be in the past. Choose today or a future date.");
+  }
+  if (campaign.endDate && campaign.endDate < today) {
+    fail("endDate", "End date cannot be in the past. Choose a future date.");
+  } else if (campaign.startDate && campaign.endDate && campaign.endDate <= campaign.startDate) {
+    fail("endDate", campaign.endDate === campaign.startDate
+      ? "Start date and end date cannot be the same. Choose a later end date."
+      : "End date must be after the start date.");
   }
 
   if (campaign.status !== CAMPAIGN_STATUS.ACTIVE) return;
+
+  if (!campaign.name || campaign.name.trim().length < 2) {
+    fail("name", "Enter a campaign name (2+ characters).");
+  }
 
   for (const [field, message] of Object.entries(REQUIRED_TO_LAUNCH)) {
     if (isBlank(campaign[field])) fail(field, message);
@@ -75,12 +103,10 @@ const campaignFields = z
       error: "Status must be draft or active.",
     }),
 
+    // The in-progress draft can have an empty or one-letter title.
+    wizardStep: z.number().int().min(0).max(3).optional(),
     // Step 1
-    name: z
-      .string({ error: "Enter a campaign name." })
-      .trim()
-      .min(2, "Enter a campaign name (2+ characters).")
-      .max(LIMIT.name, `Campaign name is too long — max ${LIMIT.name} characters.`),
+    name: text(LIMIT.name, "Campaign name"),
     objective: z.enum(CAMPAIGN_OBJECTIVES, { error: "Choose a valid objective." }),
     productName: text(LIMIT.productName, "Product or offer"),
     industry: text(LIMIT.industry, "Industry"),
@@ -97,7 +123,8 @@ const campaignFields = z
     // Step 3
     budget: z
       .number({ error: "Budget must be a number." })
-      .positive("Budget must be greater than 0.")
+      .nonnegative("Budget cannot be negative. Enter an amount greater than 0.")
+      .refine((value) => value > 0, "Budget must be greater than 0.")
       .max(LIMIT.budgetMax, "That budget is too large.")
       .nullable(),
     budgetAiSuggested: z.boolean({ error: "Invalid value." }),
@@ -111,11 +138,11 @@ const campaignFields = z
 
 /**
  * Body of POST /api/campaigns and PATCH /api/campaigns/:id.
- * `status` and `name` are always required; a draft needs nothing else, an active campaign needs everything.
+ * Status is required; drafts may have no name, active campaigns must have a valid name.
  */
 export const campaignSchema = campaignFields
   .partial()
-  .extend({ status: campaignFields.shape.status, name: campaignFields.shape.name })
+  .extend({ status: campaignFields.shape.status, name: campaignFields.shape.name.optional() })
   .superRefine(checkCampaignRules);
 
 export const createCampaignSchema = campaignSchema;

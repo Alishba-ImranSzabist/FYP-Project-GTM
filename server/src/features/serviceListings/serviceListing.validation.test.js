@@ -1,113 +1,96 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-
 import {
-  createServiceSchema,
-  idParamsSchema,
-  listQuerySchema,
-  statusBodySchema,
+  createServiceSchema, updateServiceSchema, idParamsSchema,
+  listQuerySchema, statusBodySchema, invalidRateMessage, isValidPortfolioUrl,
 } from "./serviceListing.validation.js";
 import { ServiceListing } from "./serviceListing.model.js";
 
-const errorFields = (result) => result.error.issues.map((issue) => issue.path[0]);
-
+const fields = (result) => result.error.issues.map((issue) => issue.path[0]);
 const full = {
-  status: "active",
-  name: "Video editing for reels and short films",
-  category: "video_editing",
-  description: "I edit short-form video for creators and small brands.",
-  keywords: ["reels editing", "short film"],
-  experience: "3_5",
-  portfolioLink: "https://example.com/portfolio",
-  availability: "part_time",
-  languages: "Urdu, English",
+  status: "active", name: "Video editing", category: "video_editing",
+  description: "Editing reels for brands and creators.", keywords: ["editing"],
+  targetMarket: ["Creators"], portfolioLink: "https://example.com/portfolio",
+  rate: "PKR 10,000 per video", locations: ["Karachi"], wizardStep: 2,
 };
+const parse = (data) => createServiceSchema.safeParse(data);
 
-describe("createServiceSchema", () => {
-  test("accepts a full payload", () => {
-    assert.equal(createServiceSchema.safeParse(full).success, true);
+describe("Service validation", () => {
+  test("valid complete service activates", () => assert.equal(parse(full).success, true));
+  test("draft accepts empty/unfinished name and empty steps for cross-login recovery", () => {
+    assert.equal(parse({ status: "draft" }).success, true);
+    assert.equal(parse({ status: "draft", name: "" }).success, true);
+    assert.equal(parse({ status: "draft", name: "A", description: "Half", wizardStep: 1 }).success, true);
+    assert.equal(parse({ status: "draft", name: "A", portfolioLink: "https://ex", rate: "-50" }).success, true);
   });
-
-  test("a draft only needs a name and a status", () => {
-    assert.equal(createServiceSchema.safeParse({ name: "Draft", status: "draft" }).success, true);
+  test("active rejects same incomplete payload and shows specific missing fields", () => {
+    const result = parse({ status: "active", name: "A" });
+    assert.equal(result.success, false);
+    assert.deepEqual(fields(result).sort(), ["category", "description", "keywords", "name"]);
   });
-
-  test("rejects missing name/status, unknown fields and status=paused", () => {
-    assert.equal(createServiceSchema.safeParse({ status: "draft" }).success, false);
-    assert.equal(createServiceSchema.safeParse({ name: "Draft" }).success, false);
-    assert.equal(createServiceSchema.safeParse({ name: "Ab", status: "draft", userId: "x" }).success, false);
-    assert.equal(createServiceSchema.safeParse({ name: "Ab", status: "paused" }).success, false);
+  test("other category requires custom category on activation", () => {
+    assert.deepEqual(fields(parse({ ...full, category: "other" })), ["customCategory"]);
+    assert.equal(parse({ ...full, category: "other", customCategory: "Voiceover" }).success, true);
   });
-
-  test("an active service with only a name lists every missing field", () => {
-    const result = createServiceSchema.safeParse({ name: "Ab", status: "active" });
-    assert.deepEqual(errorFields(result).sort(), ["category", "description", "keywords"]);
+  test("portfolio URL must be safe HTTP(S) when activating", () => {
+    assert.equal(parse({ ...full, portfolioLink: "javascript:alert(1)" }).success, false);
+    assert.equal(parse({ ...full, portfolioLink: "https://user:secret@example.com" }).success, false);
+    assert.equal(parse({ ...full, portfolioLink: "" }).success, true);
+    assert.equal(isValidPortfolioUrl("https://example.org"), true);
   });
-
-  test("category 'other' needs a custom category when active", () => {
-    const result = createServiceSchema.safeParse({ ...full, category: "other" });
-    assert.deepEqual(errorFields(result), ["customCategory"]);
+  test("negative or zero rate rejected on activation, negotiable allowed", () => {
+    for (const rate of ["-100", "PKR -500", "Rs. -10", "PKR 0"]) {
+      assert.equal(parse({ ...full, rate }).success, false, rate);
+      assert.ok(invalidRateMessage(rate));
+    }
+    for (const rate of ["Negotiable", "PKR 5,000 per video", "5000-10000"]) {
+      assert.equal(parse({ ...full, rate }).success, true, rate);
+    }
   });
-
-  test("portfolio link must be an http(s) link, empty is fine", () => {
-    assert.equal(createServiceSchema.safeParse({ ...full, portfolioLink: "my site" }).success, false);
-    assert.equal(createServiceSchema.safeParse({ ...full, portfolioLink: "" }).success, true);
+  test("rejects duplicate, empty, excessive and invalid list entries", () => {
+    for (const change of [
+      { keywords: ["Reels", "reels"] },
+      { targetMarket: ["Influencers", "influencers"] },
+      { locations: ["Karachi", "karachi"] },
+      { locations: [""] },
+      { keywords: Array.from({ length: 21 }, (_, i) => `K${i}`) },
+      { locations: "Karachi" },
+    ]) assert.equal(parse({ ...full, ...change }).success, false);
+    assert.deepEqual(parse({ ...full, locations: [" Karachi "] }).data.locations, ["Karachi"]);
   });
-
-  test("locations is a list: trimmed items, max 10, no empty items, no old single `location` field", () => {
-    const ok = createServiceSchema.safeParse({ ...full, locations: ["Karachi", " Remote "] });
-    assert.equal(ok.success, true);
-    assert.deepEqual(ok.data.locations, ["Karachi", "Remote"]);
-
-    const tooMany = Array.from({ length: 11 }, (_, i) => `City ${i}`);
-    assert.equal(createServiceSchema.safeParse({ ...full, locations: tooMany }).success, false);
-    assert.equal(createServiceSchema.safeParse({ ...full, locations: [""] }).success, false);
-    assert.equal(createServiceSchema.safeParse({ ...full, locations: "Karachi" }).success, false);
-    assert.equal(createServiceSchema.safeParse({ ...full, location: "Karachi" }).success, false);
+  test("valid enum, limit, wizard step, and unknown fields enforced even for drafts", () => {
+    for (const extra of [
+      { category: "unknown" }, { experience: "super_expert" }, { availability: "someday" },
+      { name: "x".repeat(121) }, { wizardStep: 4 }, { userId: "not allowed" },
+    ]) assert.equal(parse({ status: "draft", ...extra }).success, false);
+    assert.equal(parse({ status: "draft", category: null }).success, true);
+    assert.equal(parse({ status: "draft", experience: "", availability: "" }).success, true);
   });
-
-  test("targetMarket is an optional list: trimmed items, max 10, no empty items", () => {
-    const ok = createServiceSchema.safeParse({ ...full, targetMarket: ["Influencers", " Brands "] });
-    assert.equal(ok.success, true);
-    assert.deepEqual(ok.data.targetMarket, ["Influencers", "Brands"]);
-    assert.equal(createServiceSchema.safeParse(full).success, true); // still optional when active
-
-    const tooMany = Array.from({ length: 11 }, (_, i) => `Market ${i}`);
-    assert.equal(createServiceSchema.safeParse({ ...full, targetMarket: tooMany }).success, false);
-    assert.equal(createServiceSchema.safeParse({ ...full, targetMarket: [""] }).success, false);
-    assert.equal(createServiceSchema.safeParse({ ...full, targetMarket: "Brands" }).success, false);
+  test("updates use the same validation", () => {
+    assert.equal(updateServiceSchema.safeParse({ status: "draft", name: "" }).success, true);
   });
-
-  test("empty string clears experience / availability", () => {
-    assert.equal(createServiceSchema.safeParse({ ...full, experience: "", availability: "" }).success, true);
-    assert.equal(createServiceSchema.safeParse({ ...full, experience: "forever" }).success, false);
-  });
-});
-
-describe("other schemas", () => {
-  test("status body only allows active / paused", () => {
-    assert.equal(statusBodySchema.safeParse({ status: "paused" }).success, true);
+  test("other routes stay strict", () => {
     assert.equal(statusBodySchema.safeParse({ status: "draft" }).success, false);
-  });
-
-  test("list query defaults and id check", () => {
+    assert.equal(statusBodySchema.safeParse({ status: "paused" }).success, true);
+    assert.equal(idParamsSchema.safeParse({ id: "bad" }).success, false);
     assert.deepEqual(listQuerySchema.parse({}), { page: 1, limit: 20 });
-    assert.equal(idParamsSchema.safeParse({ id: "64b7f0c2a1b2c3d4e5f60718" }).success, true);
-    assert.equal(idParamsSchema.safeParse({ id: "nope" }).success, false);
   });
 });
 
-describe("ServiceListing model", () => {
-  test("defaults: draft, empty keywords, zero match stats", () => {
-    const s = new ServiceListing({ userId: "64b7f0c2a1b2c3d4e5f60718", name: "Test" });
-    assert.equal(s.validateSync(), undefined);
-    assert.equal(s.status, "draft");
-    assert.deepEqual(s.keywords.toObject(), []);
-    assert.equal(s.stats.newMatches, 0);
+describe("Service Mongoose model", () => {
+  test("draft accepts unnamed partial service and preserves wizardStep", () => {
+    const service = new ServiceListing({ userId: "64b7f0c2a1b2c3d4e5f60718", status: "draft", wizardStep: 1 });
+    assert.equal(service.validateSync(), undefined);
+    assert.equal(service.name, "");
+    assert.equal(service.wizardStep, 1);
+    assert.deepEqual(service.keywords.toObject(), []);
   });
-
-  test("toJSON exposes id instead of _id", () => {
-    const json = new ServiceListing({ userId: "64b7f0c2a1b2c3d4e5f60718", name: "Test" }).toJSON();
+  test("active requires a proper name at model layer too", () => {
+    const service = new ServiceListing({ userId: "64b7f0c2a1b2c3d4e5f60718", status: "active", name: "A" });
+    assert.ok(service.validateSync());
+  });
+  test("JSON returns id and hides _id", () => {
+    const json = new ServiceListing({ userId: "64b7f0c2a1b2c3d4e5f60718" }).toJSON();
     assert.ok(json.id);
     assert.equal(json._id, undefined);
   });

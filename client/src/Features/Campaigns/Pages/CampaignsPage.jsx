@@ -23,8 +23,11 @@ export default function CampaignsPage() {
   // The wizard sends a success message here after saving ("Draft saved."). Read it once, then clear it
   // from the browser history so it does not reappear on refresh.
   const [flash] = useState(location.state?.notice || "");
+  const [syncWarning] = useState(location.state?.syncWarning || "");
   useEffect(() => {
-    if (location.state?.notice) navigate(location.pathname, { replace: true, state: null });
+    if (location.state?.notice || location.state?.syncWarning) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
   }, [location, navigate]);
 
   const list = useCampaigns({ initialNotice: flash });
@@ -48,7 +51,7 @@ export default function CampaignsPage() {
       </div>
 
       <FormAlert tone="success" message={list.notice} />
-      <FormAlert message={list.error} />
+      <FormAlert message={list.error || syncWarning} />
 
       <CampaignTabs active={list.filter} counts={list.counts} onChange={list.changeFilter} />
 

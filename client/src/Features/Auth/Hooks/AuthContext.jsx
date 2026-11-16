@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
   const register = useCallback(async (payload) => {
     const data = await authService.register(payload);
     setUser(data.user);
-    return data.user;
+    return data; // includes verificationEmailSent, so the UI can report SMTP failures
   }, []);
 
   const logout = useCallback(async () => {

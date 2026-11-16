@@ -28,6 +28,7 @@ export default function CampaignWizardPage() {
   const config = PANEL_CONFIG[USER_ROLES.business];
 
   const handleLogout = async () => {
+    await wizard.flushDraft();
     await logout();
     navigate(ROUTES.home, { replace: true });
   };
@@ -89,8 +90,8 @@ export default function CampaignWizardPage() {
 
               <div className="cmp-actions">
                 {stepIndex === 0 ? (
-                  <Button variant="ghost" size="sm" to={ROUTES.campaigns} disabled={saving}>
-                    Cancel
+                  <Button type="button" variant="ghost" size="sm" onClick={wizard.leave} disabled={saving}>
+                    Back to campaigns
                   </Button>
                 ) : (
                   <Button type="button" variant="ghost" size="sm" onClick={wizard.goBack} disabled={saving}>

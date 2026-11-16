@@ -7,6 +7,16 @@ import { Campaign } from "./campaign.model.js";
 const firstMessage = (result) => result.error?.issues?.[0]?.message;
 const errorFields = (result) => result.error.issues.map((issue) => issue.path[0]);
 
+// Use future dates so tests remain valid after the calendar year changes.
+const today = (() => {
+  const pieces = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Karachi", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const parts = Object.fromEntries(pieces.map(({ type, value }) => [type, value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+})();
+const addDays = (date, days) => new Date(new Date(`${date}T00:00:00Z`).getTime() + days * 86_400_000).toISOString().slice(0, 10);
+
 const full = {
   name: "Summer Collection Launch",
   status: "active",
@@ -17,8 +27,8 @@ const full = {
   keywords: ["summer lawn"],
   budget: 150000,
   budgetAiSuggested: false,
-  startDate: "2026-11-10",
-  endDate: "2026-12-10",
+  startDate: addDays(today, 5),
+  endDate: addDays(today, 25),
   channels: ["email", "instagram"],
 };
 
@@ -27,13 +37,22 @@ describe("createCampaignSchema", () => {
     assert.equal(createCampaignSchema.safeParse(full).success, true);
   });
 
-  test("a draft only needs a name and a status", () => {
-    assert.equal(createCampaignSchema.safeParse({ name: "Draft one", status: "draft" }).success, true);
+  test("incomplete drafts allow blank, missing and one-letter campaign names", () => {
+    for (const payload of [
+      { status: "draft" },
+      { status: "draft", name: "" },
+      { status: "draft", name: "A", wizardStep: 1 },
+      { status: "draft", productName: "Summer lawn", wizardStep: 2 },
+    ]) assert.equal(createCampaignSchema.safeParse(payload).success, true);
   });
 
-  test("rejects a missing name or status", () => {
-    assert.equal(createCampaignSchema.safeParse({ status: "draft", objective: "drive_sales" }).success, false);
+  test("requires status, and requires a valid name when launching", () => {
+    assert.equal(createCampaignSchema.safeParse({ status: "draft", objective: "drive_sales" }).success, true);
     assert.equal(createCampaignSchema.safeParse({ name: "Draft one" }).success, false);
+    for (const name of [undefined, "", "A"]) {
+      const payload = { ...full, name };
+      assert.equal(createCampaignSchema.safeParse(payload).success, false);
+    }
   });
 
   test("rejects unknown fields such as userId or status=completed", () => {
@@ -46,6 +65,12 @@ describe("createCampaignSchema", () => {
     assert.equal(createCampaignSchema.safeParse({ ...draft, objective: "world_domination" }).success, false);
     assert.equal(createCampaignSchema.safeParse({ ...draft, budget: -5 }).success, false);
     assert.equal(createCampaignSchema.safeParse({ ...draft, startDate: "10/11/2026" }).success, false);
+  });
+
+  test("rejects wizard steps outside the existing four steps", () => {
+    for (const wizardStep of [-1, 4, 1.5, "1"]) {
+      assert.equal(createCampaignSchema.safeParse({ status: "draft", wizardStep }).success, false);
+    }
   });
 
   test("allows clearing budget and dates with null", () => {
@@ -92,17 +117,45 @@ describe("launch rules (status = active)", () => {
   });
 
   test("end date cannot be before start date (draft or active)", () => {
-    const backwards = { startDate: "2026-12-10", endDate: "2026-11-10" };
+    const backwards = { startDate: addDays(today, 25), endDate: addDays(today, 5) };
     const draft = createCampaignSchema.safeParse({ name: "Ab", status: "draft", ...backwards });
     const active = createCampaignSchema.safeParse({ ...full, ...backwards });
     assert.equal(draft.success, false);
     assert.equal(active.success, false);
-    assert.equal(firstMessage(draft), "End date must be on or after the start date.");
+    assert.equal(firstMessage(draft), "End date must be after the start date.");
   });
 
-  test("same-day campaigns are allowed", () => {
-    const result = createCampaignSchema.safeParse({ ...full, startDate: "2026-11-10", endDate: "2026-11-10" });
-    assert.equal(result.success, true);
+  test("same-day campaigns are rejected with the right message", () => {
+    const date = addDays(today, 5);
+    const result = createCampaignSchema.safeParse({ ...full, startDate: date, endDate: date });
+    assert.equal(result.success, false);
+    assert.ok(result.error.issues.some((issue) => issue.path[0] === "endDate" && issue.message.includes("cannot be the same")));
+  });
+
+  test("today as start and tomorrow as end is allowed", () => {
+    assert.equal(createCampaignSchema.safeParse({ ...full, startDate: today, endDate: addDays(today, 1) }).success, true);
+  });
+
+  test("rejects past days, past months, and past years", () => {
+    for (const past of [addDays(today, -1), addDays(today, -40), addDays(today, -400)]) {
+      for (const field of ["startDate", "endDate"]) {
+        const result = createCampaignSchema.safeParse({ ...full, [field]: past });
+        assert.equal(result.success, false, `${field} ${past} should be invalid`);
+        assert.ok(errorFields(result).includes(field));
+      }
+    }
+  });
+
+  test("rejects invalid calendar dates including February 30", () => {
+    for (const invalid of ["2030-02-30", "2030-13-01", "2030-00-01", "2030-04-31"]) {
+      assert.equal(createCampaignSchema.safeParse({ ...full, startDate: invalid }).success, false);
+    }
+  });
+
+  test("rejects negative budget with a useful error", () => {
+    const result = createCampaignSchema.safeParse({ ...full, budget: -100 });
+    assert.equal(result.success, false);
+    assert.ok(result.error.issues.some((issue) => issue.path[0] === "budget" && issue.message.includes("negative")));
   });
 });
 
@@ -142,6 +195,15 @@ describe("listQuerySchema / idParamsSchema", () => {
 });
 
 describe("Campaign model", () => {
+  test("draft model permits an empty name; active model requires a real name", () => {
+    const uid = "64b7f0c2a1b2c3d4e5f60718";
+    const draft = new Campaign({ userId: uid, status: "draft", name: "", wizardStep: 2 });
+    assert.equal(draft.validateSync(), undefined);
+    assert.equal(draft.wizardStep, 2);
+    const active = new Campaign({ userId: uid, status: "active", name: "A" });
+    assert.ok(active.validateSync()?.errors?.name);
+  });
+
   test("defaults: draft status, empty lists, PKR", () => {
     const c = new Campaign({ userId: "64b7f0c2a1b2c3d4e5f60718", name: "Test" });
     assert.equal(c.validateSync(), undefined);
