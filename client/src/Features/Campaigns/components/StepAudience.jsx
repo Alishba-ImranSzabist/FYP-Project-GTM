@@ -13,16 +13,7 @@ export default function StepAudience({ form }) {
   return (
     <div className="cmp-grid">
       <div className="cmp-cell cmp-cell--full">
-        <ChipInput
-          label="Target market (where) *"
-          placeholder="+ Add location"
-          values={values.targetLocations}
-          onChange={(next) => setValue("targetLocations", next)}
-          max={L.locations}
-          maxLength={L.location}
-          error={errors.targetLocations}
-          disabled={saving}
-        />
+       <ChipInput label="Target market (where) *"placeholder="+ Add location"values={values.targetLocations} onChange={(next) => setValue("targetLocations", next)} max={L.locations}error={errors.targetLocations} disabled={saving}/>
       </div>
 
       <div className="cmp-cell cmp-cell--full">

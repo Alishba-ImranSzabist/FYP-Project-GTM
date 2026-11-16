@@ -8,6 +8,11 @@ export const list = asyncHandler(async (req, res) => {
   sendSuccess(res, await serviceListings.listServices(req.user._id, req.query));
 });
 
+/** GET /api/service-listings/draft/recent */
+export const recentDraft = asyncHandler(async (req, res) => {
+  sendSuccess(res, await serviceListings.getRecentDraft(req.user._id));
+});
+
 /** GET /api/service-listings/:id */
 export const getOne = asyncHandler(async (req, res) => {
   sendSuccess(res, await serviceListings.getService(req.user._id, req.params.id));

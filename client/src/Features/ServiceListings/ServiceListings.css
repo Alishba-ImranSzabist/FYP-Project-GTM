@@ -7,3 +7,29 @@
 
 /* Dropdown: same look as .field__input, with room for the arrow */
 .svc-select { appearance: auto; cursor: pointer; }
+
+/* Wizard layout stays within its parent, even when a validation message appears. */
+.svc-wizard,
+.svc-wizard .cmp-form,
+.svc-details-grid,
+.svc-details-grid .cmp-cell,
+.svc-details-grid .field,
+.svc-details-grid .field__control {
+  min-width: 0;
+  width: 100%;
+}
+
+.svc-details-grid .field__input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* FormField swaps the hint for an error. Keep the same message area present
+   in both states so a negative rate does not resize or shift the form. */
+.svc-rate-cell .field__hint,
+.svc-rate-cell .field__error {
+  min-height: 3.25rem;
+  margin: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}

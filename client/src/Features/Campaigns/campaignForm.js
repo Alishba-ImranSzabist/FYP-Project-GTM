@@ -1,4 +1,4 @@
-import { CAMPAIGN_LIMITS as L, STEPS } from "./campaignConfig";
+import { CAMPAIGN_LIMITS as L, CAMPAIGN_TIME_ZONE, STEPS } from "./campaignConfig";
 
 /**
  * Pure form logic (no React): empty values, API <-> form conversion and validation.
@@ -61,9 +61,10 @@ export function fromCampaign(campaign, businessProfile) {
 /* ---------- form -> API ---------- */
 
 /** Body for POST / PATCH /api/campaigns. `status` is "draft" or "active". Always the whole form. */
-export function toPayload(values, status) {
+export function toPayload(values, status, wizardStep = 0) {
   const payload = {
     status,
+    wizardStep,
     name: values.name.trim(),
     productName: values.productName.trim(),
     industry: values.industry.trim(),
@@ -101,29 +102,65 @@ const REQUIRED_TO_LAUNCH = {
   channels: "Choose at least one channel.",
 };
 
-/** Checks that apply to drafts too: (values) => error message or undefined. */
-const VALUE_CHECKS = {
-  name: (v) => (v.name.trim().length < 2 ? "Enter a campaign name (2+ characters)." : undefined),
+/** Today in the platform's campaign timezone, formatted as YYYY-MM-DD. */
+export function campaignToday(now = new Date()) {
+  const pieces = new Intl.DateTimeFormat("en-GB", {
+    timeZone: CAMPAIGN_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const parts = Object.fromEntries(pieces.map(({ type, value }) => [type, value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
 
-  budget: (v) => {
-    if (v.budgetAiSuggested || v.budget === "") return undefined; // optional
-    const amount = Number(v.budget);
-    if (!Number.isFinite(amount) || amount <= 0) return "Enter a budget greater than 0.";
-    if (amount > L.budgetMax) return "That budget is too large.";
-    return undefined;
-  },
+/** Reject malformed/impossible calendar days such as 2026-02-30. */
+export function isValidCampaignDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 
-  endDate: (v) =>
-    v.startDate && v.endDate && v.endDate < v.startDate // "YYYY-MM-DD" strings compare correctly
-      ? "End date must be on or after the start date."
-      : undefined,
-};
+/** Live checks only for fields with a value. Blank required fields are checked on Next/Launch. */
+export function validateBudgetAndDates(values, today = campaignToday()) {
+  const errors = {};
+
+  if (!values.budgetAiSuggested && values.budget !== "") {
+    const budget = Number(values.budget);
+    if (!Number.isFinite(budget)) errors.budget = "Enter a valid budget amount.";
+    else if (budget < 0) errors.budget = "Budget cannot be negative. Enter an amount greater than 0.";
+    else if (budget === 0) errors.budget = "Budget must be greater than 0.";
+    else if (budget > L.budgetMax) errors.budget = `Budget cannot exceed ${L.budgetMax.toLocaleString("en-US")}.`;
+  }
+
+  const validStart = !values.startDate || isValidCampaignDate(values.startDate);
+  const validEnd = !values.endDate || isValidCampaignDate(values.endDate);
+
+  if (!validStart) errors.startDate = "Enter a valid start date.";
+  else if (values.startDate && values.startDate < today) {
+    errors.startDate = "Start date cannot be in the past. Choose today or a future date.";
+  }
+
+  if (!validEnd) errors.endDate = "Enter a valid end date.";
+  else if (values.endDate && values.endDate < today) {
+    errors.endDate = "End date cannot be in the past. Choose a future date.";
+  } else if (validStart && values.startDate && values.endDate && values.endDate <= values.startDate) {
+    errors.endDate = values.endDate === values.startDate
+      ? "Start date and end date cannot be the same. Choose a later end date."
+      : "End date must be after the start date.";
+  }
+
+  return errors;
+}
 
 function validateFields(fields, values, strict) {
   const errors = {};
+  const liveErrors = validateBudgetAndDates(values);
   for (const field of fields) {
     const required = strict && isBlank(values[field]) ? REQUIRED_TO_LAUNCH[field] : undefined;
-    const message = required || VALUE_CHECKS[field]?.(values);
+    const message = required || liveErrors[field]
+      || (strict && field === "name" && values.name.trim().length < 2
+        ? "Enter a campaign name (2+ characters)." : undefined);
     if (message) errors[field] = message;
   }
   return errors;

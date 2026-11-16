@@ -23,8 +23,9 @@ export default function ServicesPage() {
   // The wizard sends a success message here after saving. Read it once, then clear it
   // from the browser history so it does not reappear on refresh.
   const [flash] = useState(location.state?.notice || "");
+  const [syncWarning] = useState(location.state?.syncWarning || "");
   useEffect(() => {
-    if (location.state?.notice) navigate(location.pathname, { replace: true, state: null });
+    if (location.state?.notice || location.state?.syncWarning) navigate(location.pathname, { replace: true, state: null });
   }, [location, navigate]);
 
   const list = useServiceListings({ initialNotice: flash });
@@ -42,13 +43,13 @@ export default function ServicesPage() {
           <h1>My Services</h1>
           <p>Add every service you offer. The AI finds opportunities for each one.</p>
         </div>
-        <Button variant="accent" size="md" icon={Plus} to={ROUTES.serviceNew}>
+        <Button variant="accent" size="md" icon={Plus} to={`${ROUTES.serviceNew}?fresh=1`}>
           Add service
         </Button>
       </div>
 
       <FormAlert tone="success" message={list.notice} />
-      <FormAlert message={list.error} />
+      <FormAlert message={list.error || syncWarning} />
 
       {list.loading ? (
         <div className="cmp-list" aria-busy="true" aria-label="Loading services">
@@ -66,7 +67,7 @@ export default function ServicesPage() {
           </span>
           <h3>No services yet</h3>
           <p>Describe what you offer in a few quick steps and the AI will start looking for opportunities.</p>
-          <Button variant="accent" size="md" icon={Plus} to={ROUTES.serviceNew}>
+          <Button variant="accent" size="md" icon={Plus} to={`${ROUTES.serviceNew}?fresh=1`}>
             Add service
           </Button>
         </section>

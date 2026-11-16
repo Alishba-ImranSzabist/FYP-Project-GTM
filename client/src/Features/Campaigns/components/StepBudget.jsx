@@ -1,11 +1,13 @@
 import FormField from "../../../Shared_Components/FormField";
 import { CHANNEL_OPTIONS, CURRENCY } from "../campaignConfig";
+import { campaignToday } from "../campaignForm";
 import ChipSelect from "./ChipSelect";
 
 /** Step 3 — budget (or "let the AI suggest"), dates and channels. */
 export default function StepBudget({ form }) {
   const { values, errors, handleChange, setValue, saving } = form;
 
+  const today = campaignToday();
   const toggleAiBudget = (event) => {
     const checked = event.target.checked;
     setValue("budgetAiSuggested", checked);
@@ -19,8 +21,9 @@ export default function StepBudget({ form }) {
           label="Total budget (optional)"
           name="budget"
           type="number"
-          inputMode="numeric"
-          min="0"
+          inputMode="decimal"
+          min="0.01"
+          step="any"
           placeholder="e.g. 150000"
           hint={`Amount in ${CURRENCY}.`}
           value={values.budget}
@@ -44,6 +47,7 @@ export default function StepBudget({ form }) {
         <FormField
           label="Start date *"
           name="startDate"
+          min={today}
           type="date"
           value={values.startDate}
           onChange={handleChange}
@@ -57,7 +61,8 @@ export default function StepBudget({ form }) {
           label="End date *"
           name="endDate"
           type="date"
-          min={values.startDate || undefined}
+          // Permit choosing the same day, so our clear inline error can explain why it is invalid.
+          min={values.startDate && values.startDate > today ? values.startDate : today}
           value={values.endDate}
           onChange={handleChange}
           error={errors.endDate}

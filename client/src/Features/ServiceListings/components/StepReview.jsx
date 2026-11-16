@@ -20,6 +20,7 @@ export default function StepReview({ form }) {
       rows: [
         { label: "Service", value: values.name },
         { label: "Category", value: category },
+        { label: "Description", value: values.description },
         { label: "Keywords", value: values.keywords.join(", ") },
         { label: "Target market", value: values.targetMarket.join(", ") },
       ],
@@ -29,6 +30,8 @@ export default function StepReview({ form }) {
       step: 1,
       rows: [
         { label: "Experience", value: labelOf(EXPERIENCE_OPTIONS, values.experience) },
+        { label: "Portfolio", value: values.portfolioLink },
+        { label: "Rate", value: values.rate },
         { label: "Availability", value: labelOf(AVAILABILITY_OPTIONS, values.availability) },
         { label: "Location", value: values.locations.join(", ") },
         { label: "Languages", value: values.languages },

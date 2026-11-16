@@ -24,7 +24,7 @@ export default function ServiceCard({ service, busy, onToggleMatching, onDuplica
     <article className="pnl-card cmp-card" aria-busy={busy}>
       <div className="cmp-card__main">
         <div className="cmp-card__title">
-          <h3>{service.name}</h3>
+          <h3>{service.name?.trim() || "Untitled service"}</h3>
           <span className={`pnl-tag pnl-tag--${status.tone}`}>{status.label}</span>
         </div>
         {service.keywords.length > 0 && <p className="cmp-card__meta">{service.keywords.join(" · ")}</p>}

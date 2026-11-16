@@ -19,6 +19,8 @@ router.use(protect, authorize(USER_ROLES.SERVICE_PROVIDER));
 router.get("/", validate(listQuerySchema, "query"), controller.list);
 router.post("/", validate(createServiceSchema), controller.create);
 
+router.get("/draft/recent", controller.recentDraft);
+
 router.get("/:id", validate(idParamsSchema, "params"), controller.getOne);
 router.patch("/:id", validate(idParamsSchema, "params"), validate(updateServiceSchema), controller.update);
 router.delete("/:id", validate(idParamsSchema, "params"), controller.remove);

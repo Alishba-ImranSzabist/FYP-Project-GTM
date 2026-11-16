@@ -12,7 +12,7 @@ import {
  * One document per campaign. A business user owns many campaigns (User 1 : N Campaign).
  * Fields are grouped by the wizard step that fills them in.
  *
- * Drafts may be incomplete, so only `userId` and `name` are required here.
+ * Drafts may be incomplete, including an empty name; userId is always required.
  * The "ready to launch" rules live in campaign.service.js (findRuleErrors).
  */
 const campaignSchema = new mongoose.Schema(
@@ -25,7 +25,18 @@ const campaignSchema = new mongoose.Schema(
     },
 
     // Step 1 — Campaign details
-    name: { type: String, required: true, trim: true, minlength: 2, maxlength: LIMIT.name },
+    // Blank/one-letter titles are allowed while autosaving incomplete drafts only.
+    name: {
+      type: String, default: "", trim: true, maxlength: LIMIT.name,
+      validate: {
+        validator(value) {
+          return this.status === CAMPAIGN_STATUS.DRAFT || String(value || "").trim().length >= 2;
+        },
+        message: "Enter a campaign name (2+ characters).",
+      },
+    },
+    // Wizard position survives logout and switching devices.
+    wizardStep: { type: Number, min: 0, max: 3, default: 0 },
     objective: { type: String, enum: CAMPAIGN_OBJECTIVES },
     productName: { type: String, trim: true, maxlength: LIMIT.productName },
     industry: { type: String, trim: true, maxlength: LIMIT.industry },
