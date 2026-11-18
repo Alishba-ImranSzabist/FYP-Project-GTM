@@ -26,7 +26,7 @@ const business = {
       items: [
         { label: "Dashboard", icon: LayoutDashboard, to: ROUTES.dashboard },
         { label: "Campaigns", icon: Megaphone, to: ROUTES.campaigns },
-        { label: "AI Recommendations", icon: Sparkles },
+        { label: "AI Recommendations", icon: Sparkles, to: ROUTES.aiRecommendations },
         { label: "Data & Enrichment", icon: Database },
         { label: "Lead Qualification", icon: UserCheck },
         { label: "Lead Pipeline", icon: GitBranch },
@@ -119,7 +119,7 @@ const admin = {
   eyebrow: "Platform control center",
   title: "Admin overview",
   subtitle: "Monitor users, AI quality and commercial performance.",
-  cta: { label: "Manage AI models", icon: Cpu },
+  cta: { label: "Manage AI models", icon: Cpu, to: ROUTES.aiModelManagement },
   nav: [
     {
       section: "Platform",
@@ -129,7 +129,7 @@ const admin = {
         { label: "Subscription & Billing", icon: CreditCard },
         { label: "Feedback", icon: ThumbsUp },
         { label: "Usage Analytics", icon: BarChart3 },
-        { label: "AI Model Management", icon: Sparkles },
+        { label: "AI Model Management", icon: Sparkles, to: ROUTES.aiModelManagement },
       ],
     },
   ],
