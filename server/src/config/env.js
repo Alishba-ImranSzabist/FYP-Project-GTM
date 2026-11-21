@@ -16,23 +16,30 @@ export const env = Object.freeze({
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
-  // Only people who know this code can register an admin account. Leave empty to disable.
   adminInviteCode: process.env.ADMIN_INVITE_CODE || "",
 
-  // Outgoing email (Brevo SMTP) — used for OTP verification & password reset
   mail: {
     host: process.env.BREVO_SMTP_HOST,
     port: Number(process.env.BREVO_SMTP_PORT) || 587,
-    secure: Number(process.env.BREVO_SMTP_PORT) === 465, // 465 = implicit TLS, 587 = STARTTLS
+    secure: Number(process.env.BREVO_SMTP_PORT) === 465,
     user: process.env.BREVO_SMTP_USER,
     pass: process.env.BREVO_SMTP_KEY,
     from: process.env.MAIL_FROM,
   },
 
-  // OTP rules: code stays valid 10 minutes; 5 wrong guesses lock the code
   otp: {
     ttlMinutes: Number(process.env.OTP_TTL_MINUTES) || 10,
     maxAttempts: Number(process.env.OTP_MAX_ATTEMPTS) || 5,
-    cooldownSeconds: Number(process.env.OTP_COOLDOWN_SECONDS) || 60, // min gap between two sends to the same email
+    cooldownSeconds: Number(process.env.OTP_COOLDOWN_SECONDS) || 60,
+  },
+
+  // AI keys stay on the server. Never expose these through VITE_ variables.
+  ai: {
+    geminiApiKey: process.env.GEMINI_API_KEY || "",
+    geminiModel: process.env.GEMINI_MODEL || "gemini-3.8-flash",
+    anthropicApiKey: process.env.ANTHROPIC_API_KEY || "",
+    claudeModel: process.env.CLAUDE_MODEL || "claude-3-5-sonnet-20241022",
+    requestTimeoutMs: Number(process.env.AI_REQUEST_TIMEOUT_MS) || 90000,
+    maxOutputTokens: Number(process.env.AI_MAX_OUTPUT_TOKENS) || 8192,
   },
 });

@@ -153,6 +153,73 @@ function ScheduleSection({ section }) {
   );
 }
 
+
+function CustomSection({ section }) {
+  const content =
+    typeof section.content === "string"
+      ? { recommendation: section.content, keyPoints: [], rationale: "" }
+      : section.content || {};
+
+  return (
+    <div className="air-custom-section">
+      {content.recommendation && <p>{content.recommendation}</p>}
+      {Array.isArray(content.keyPoints) && content.keyPoints.length > 0 && (
+        <ul>
+          {content.keyPoints.map((point, index) => <li key={`${index}-${point}`}>{point}</li>)}
+        </ul>
+      )}
+      {content.rationale && <p><strong>Why this matters:</strong> {content.rationale}</p>}
+      {!content.recommendation && !content.keyPoints?.length && !content.rationale && (
+        <p>{section.summary || "Review this recommendation with your campaign details."}</p>
+      )}
+    </div>
+  );
+}
+
+
+function EvidencePanel({ evidence }) {
+  if (!evidence) return null;
+
+  const examples = Array.isArray(evidence.examples) ? evidence.examples : [];
+
+  return (
+    <aside className="air-evidence-panel" aria-label="Evidence and context">
+      <div className="air-evidence-panel__heading">
+        <strong>Evidence and context</strong>
+        <span>{examples.length} approved example{examples.length === 1 ? "" : "s"} cited</span>
+      </div>
+
+      {examples.length > 0 ? (
+        <ul className="air-evidence-panel__list">
+          {examples.map((example) => (
+            <li key={example.exampleId}>
+              <div>
+                <strong>{example.sourceTitle || example.campaignName}</strong>
+                {example.publisher ? <span>{example.publisher}</span> : null}
+                <small>Example ID: {example.exampleId}</small>
+                {example.limitations?.length > 0 ? (
+                  <small>Limitations: {example.limitations.join("; ")}</small>
+                ) : null}
+              </div>
+              {example.sourceUrl ? (
+                <a href={example.sourceUrl} target="_blank" rel="noreferrer">
+                  View source
+                </a>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="air-evidence-panel__empty">
+          No approved campaign example was directly cited for this section.
+        </p>
+      )}
+
+      {evidence.note ? <p className="air-evidence-panel__note">{evidence.note}</p> : null}
+    </aside>
+  );
+}
+
 export default function RecommendationSection({ section }) {
   const meta = AI_RECOMMENDATION_SECTIONS.find((item) => item.id === section.id);
   const Icon = SECTION_ICONS[section.id] || Lightbulb;
@@ -163,7 +230,7 @@ export default function RecommendationSection({ section }) {
         <span className="air-section-icon"><Icon size={18} /></span>
         <div>
           <span className="air-kicker">RECOMMENDATION {meta?.number || ""}</span>
-          <h3 id={`air-section-${section.id}`}>{meta?.title || section.id}</h3>
+          <h3 id={`air-section-${section.id}`}>{section.title || meta?.title || section.id}</h3>
           <p>{section.summary}</p>
         </div>
       </div>
@@ -174,6 +241,8 @@ export default function RecommendationSection({ section }) {
       {section.id === "content" && <ContentSection section={section} />}
       {section.id === "leadSignals" && <LeadSignalsSection section={section} />}
       {section.id === "schedule" && <ScheduleSection section={section} />}
+      {!["audience", "channels", "budget", "content", "leadSignals", "schedule"].includes(section.id) && <CustomSection section={section} />}
+      <EvidencePanel evidence={section.evidence} />
     </section>
   );
 }

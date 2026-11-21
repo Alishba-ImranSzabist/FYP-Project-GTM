@@ -57,7 +57,7 @@ export default function AIRecommendationsPage() {
                 <h1>AI Recommendations</h1>
                 <p>Choose a campaign and an AI model to build a practical go-to-market plan.</p>
               </div>
-              <span className="air-preview-badge"><Sparkles size={14} /> Frontend preview</span>
+              <span className="air-preview-badge"><Sparkles size={14} /> AI-powered planning</span>
             </div>
 
             {feature.campaigns.length > 0 && <FormAlert message={feature.error} />}
@@ -109,7 +109,7 @@ export default function AIRecommendationsPage() {
 
                 <div className="air-info-note">
                   <Info size={16} />
-                  <p>Recommendations are estimates, not guarantees. Review the suggested plan before using it. This frontend preview uses sample data and does not consume real AI credits.</p>
+                  <p>Recommendations are estimates, not guarantees. The selected AI provider may consume API credits. Review the suggested plan and validate it with real account data before acting.</p>
                 </div>
 
                 <div className="air-builder__actions">

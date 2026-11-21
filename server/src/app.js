@@ -10,6 +10,8 @@ import userRoutes from "./features/users/user.routes.js";
 import campaignRoutes from "./features/campaigns/campaign.routes.js";
 import serviceListingRoutes from "./features/serviceListings/serviceListing.routes.js";
 import profileRoutes from "./features/profiles/profile.routes.js";
+import aiRecommendationRoutes from "./features/aiRecommendations/routes/recommendation.routes.js";
+import aiRecommendationAdminRoutes from "./features/aiRecommendations/routes/admin.routes.js";
 
 const app = express();
 
@@ -20,7 +22,11 @@ app.use(cookieParser());
 
 app.get("/api/health", (_req, res) => res.json({ success: true, message: "GTM API is running" }));
 
-// One line per feature. Add new features (jobs, applications …) here.
+// Admin routes are mounted before business-user routes at the shared prefix.
+app.use("/api/ai-recommendations/admin", aiRecommendationAdminRoutes);
+app.use("/api/ai-recommendations", aiRecommendationRoutes);
+
+// Existing feature mounts — unchanged.
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/campaigns", campaignRoutes);

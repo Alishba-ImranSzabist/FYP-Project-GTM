@@ -399,3 +399,86 @@
 .air-style-card.is-selected .air-style-card__radio { border-color: var(--color-primary); background: var(--color-primary); }
 .air-style-card:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
 @media (max-width: 850px) { .air-style-grid { grid-template-columns: 1fr; } }
+
+
+/* Admin-added recommendation sections returned by the backend. */
+.air-custom-section {
+  display: grid;
+  gap: 0.7rem;
+  color: var(--color-body);
+  font-size: var(--text-sm);
+}
+.air-custom-section ul {
+  display: grid;
+  gap: 0.4rem;
+  padding-left: 1.2rem;
+  list-style: disc;
+}
+.air-custom-section li::marker { color: var(--color-primary); }
+.air-custom-section strong { color: var(--color-heading); }
+
+
+/* Evidence returned by the backend is resolved only against approved examples. */
+.air-evidence-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.85rem;
+  background: var(--color-surface-subtle, #f8fafc);
+}
+.air-evidence-panel__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.air-evidence-panel__heading strong {
+  color: var(--color-heading, #172033);
+  font-size: 0.9rem;
+}
+.air-evidence-panel__heading span,
+.air-evidence-panel__list small,
+.air-evidence-panel__list li div > span {
+  color: var(--color-muted, #64748b);
+  font-size: 0.75rem;
+}
+.air-evidence-panel__list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.air-evidence-panel__list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+.air-evidence-panel__list li div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.air-evidence-panel__list li div > strong {
+  color: var(--color-heading, #172033);
+  font-size: 0.85rem;
+}
+.air-evidence-panel__list a {
+  flex: 0 0 auto;
+  color: var(--color-primary, #0f766e);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: underline;
+}
+.air-evidence-panel__empty,
+.air-evidence-panel__note {
+  margin: 0;
+  color: var(--color-muted, #64748b);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
