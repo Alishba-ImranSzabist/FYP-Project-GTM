@@ -58,8 +58,8 @@ export default function RecommendationResults({
     ? recommendationStyle.charAt(0).toUpperCase() + recommendationStyle.slice(1)
     : "Balanced";
   const editPath = ROUTES.campaignEdit.replace(":id", campaign.id);
-  const enabledSectionIds = new Set(AI_RECOMMENDATION_SECTIONS.map((section) => section.id));
-  const sections = (recommendation.sections || []).filter((section) => enabledSectionIds.has(section.id));
+  // The backend returns the currently enabled admin-configured sections in display order.
+  const sections = Array.isArray(recommendation.sections) ? recommendation.sections : [];
   const [activeSectionId, setActiveSectionId] = useState(sections[0]?.id || "");
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function RecommendationResults({
         <CheckCircle2 size={16} />
         <p>Recommendations are estimates based on the campaign details provided. Review the suggestions and validate them with real market and account data before acting.</p>
         <span className={`air-review-status air-review-status--${reviewStatus}`}>
-          {reviewStatus === "approved" ? "Approved in preview" : reviewStatus === "draft" ? "Draft preview" : "Needs review"}
+          {reviewStatus === "approved" ? "Approved" : reviewStatus === "draft" ? "Draft saved" : "Needs review"}
         </span>
       </div>
 
@@ -97,7 +97,8 @@ export default function RecommendationResults({
 
       <div className="air-results__tabs" role="tablist" aria-label="Recommendation sections">
         {sections.map((section) => {
-          const meta = AI_RECOMMENDATION_SECTIONS.find((item) => item.id === section.id);
+          const knownMeta = AI_RECOMMENDATION_SECTIONS.find((item) => item.id === section.id);
+          const meta = knownMeta || { number: String(sections.indexOf(section) + 1).padStart(2, "0"), title: section.title || section.id };
           const isActive = activeSection?.id === section.id;
           const Icon = SECTION_ICONS[section.id] || Lightbulb;
 
@@ -143,7 +144,7 @@ export default function RecommendationResults({
           <span className="air-review-panel__icon"><Clock3 size={18} /></span>
           <div>
             <h3>Review before you proceed</h3>
-            <p>Check the suggested audience, budget and plan. Approval here is only a frontend preview; it does not launch a campaign or contact leads.</p>
+            <p>Check the suggested audience, budget and plan. Approval is saved to your account; it does not launch a campaign or contact leads.</p>
           </div>
         </div>
         <div className="air-review-panel__actions">

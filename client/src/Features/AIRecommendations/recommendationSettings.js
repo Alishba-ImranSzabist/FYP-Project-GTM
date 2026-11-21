@@ -7,7 +7,7 @@ export const AI_RECOMMENDATION_MODELS = Object.freeze([
   {
     id: "fast",
     name: "Fast",
-    provider: "Google · Gemini Flash",
+    provider: "Google · Gemini 3.8 Flash",
     label: "Good for a first look",
     description: "A quick overview of the audience, budget and channel opportunities.",
     benefits: [
@@ -22,7 +22,7 @@ export const AI_RECOMMENDATION_MODELS = Object.freeze([
   {
     id: "detailed",
     name: "Detailed",
-    provider: "Anthropic · Claude Sonnet",
+    provider: "Anthropic · Claude Sonnet 5",
     label: "More thorough",
     description: "Deeper reasoning across the audience, budget, channels and campaign plan.",
     benefits: [
@@ -77,4 +77,4 @@ export const AI_RECOMMENDATION_LIMITS = Object.freeze({
  * tested before the AI backend endpoint and MongoDB model are implemented.
  * Set to false when POST /api/ai-recommendations is available.
  */
-export const AI_RECOMMENDATIONS_DEMO_MODE = true;
+export const AI_RECOMMENDATIONS_DEMO_MODE = false;

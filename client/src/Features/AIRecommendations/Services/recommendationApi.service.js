@@ -1,12 +1,10 @@
-/** All HTTP calls for AI Recommendations live here. Components never call fetch directly. */
+/** All HTTP calls for AI Recommendations live here. */
 
-import { AI_RECOMMENDATIONS_DEMO_MODE } from "../recommendationSettings.js";
-import { createMockRecommendations } from "../data/recommendationPreviewData.js";
-
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const configuredApiUrl = import.meta.env?.VITE_API_URL || "/api";
+const API_URL = configuredApiUrl.replace(/\/+$/, "");
 
 export class ApiError extends Error {
-  constructor(message, { status, fieldErrors } = {}) {
+  constructor(message, { status = null, fieldErrors = {} } = {}) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -14,49 +12,121 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, { method = "GET", body } = {}) {
-  let response;
-  try {
-    response = await fetch(`${API_URL}${path}`, {
-      method,
-      credentials: "include", // uses the existing httpOnly login session cookie
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-  } catch {
-    throw new ApiError("Cannot reach the server. Please check your connection and try again.");
+function readErrorMessage(json, status) {
+  if (typeof json?.message === "string" && json.message.trim()) {
+    return json.message.trim();
   }
 
-  const json = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new ApiError(json.message || "Something went wrong.", {
+  if (typeof json?.error?.message === "string" && json.error.message.trim()) {
+    return json.error.message.trim();
+  }
+
+  if (typeof json?.error === "string" && json.error.trim()) {
+    return json.error.trim();
+  }
+
+  if (typeof json?.data?.message === "string" && json.data.message.trim()) {
+    return json.data.message.trim();
+  }
+
+  return `The request failed with status ${status}. Please try again.`;
+}
+
+function readFieldErrors(json) {
+  return (
+    json?.fieldErrors ||
+    json?.errors ||
+    json?.error?.fieldErrors ||
+    json?.error?.errors ||
+    {}
+  );
+}
+
+/**
+ * Shared request helper.
+ * The backend's sendSuccess envelope is expected to return { data: ... }.
+ * Error responses are read from the parsed `json` object.
+ */
+export async function request(path, { method = "GET", body, headers = {} } = {}) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const hasBody = body !== undefined;
+
+  let response;
+  try {
+    response = await fetch(`${API_URL}${normalizedPath}`, {
+      method,
+      credentials: "include",
+      headers: {
+        ...(hasBody ? { "Content-Type": "application/json" } : {}),
+        ...headers,
+      },
+      body: hasBody ? JSON.stringify(body) : undefined,
+    });
+  } catch (error) {
+    throw new ApiError(
+      error?.message
+        ? "Cannot reach the server. Check that the backend is running and try again."
+        : "Cannot reach the server. Please check your connection and try again.",
+      { status: 0 }
+    );
+  }
+
+  const rawText = await response.text();
+  let json = {};
+
+  if (rawText) {
+    try {
+      json = JSON.parse(rawText);
+    } catch {
+      json = { message: rawText.slice(0, 400) };
+    }
+  }
+
+  if (!response.ok || json?.success === false) {
+    const message = readErrorMessage(json, response.status);
+    console.error("[AI Recommendations] API request failed:", {
+      path: normalizedPath,
       status: response.status,
-      fieldErrors: json.errors,
+      message,
+    });
+
+    throw new ApiError(message, {
+      status: response.status,
+      fieldErrors: readFieldErrors(json),
     });
   }
-  return json.data;
+
+  return json?.data ?? json?.result ?? json;
 }
 
 export const recommendationApiService = {
-  /**
-   * Frontend preview now; real endpoint contract is POST /api/ai-recommendations
-   * with { campaignId, model, recommendationStyle }. The server will return { recommendation }.
-   */
-  generate: async ({ campaign, model, recommendationStyle = "balanced" }) => {
-    if (AI_RECOMMENDATIONS_DEMO_MODE) {
-      await new Promise((resolve) => window.setTimeout(resolve, model === "detailed" ? 900 : 500));
-      return { recommendation: createMockRecommendations(campaign, model, recommendationStyle) };
+  generate: ({ campaign, model, recommendationStyle = "balanced" }) => {
+    if (!campaign?.id) {
+      return Promise.reject(new ApiError("Select a saved campaign first."));
     }
 
     return request("/ai-recommendations", {
       method: "POST",
-      body: { campaignId: campaign.id, model, recommendationStyle },
+      body: {
+        campaignId: campaign.id,
+        model,
+        recommendationStyle,
+      },
     });
   },
 
-  // Ready for the backend phase; these methods remain unused in frontend preview mode.
   saveDraft: (recommendationId) =>
     request(`/ai-recommendations/${recommendationId}/draft`, { method: "PATCH" }),
-  approve: (recommendationId) =>
-    request(`/ai-recommendations/${recommendationId}/approve`, { method: "PATCH" }),
+
+  approve: (recommendationId, comment = "") =>
+    request(`/ai-recommendations/${recommendationId}/approve`, {
+      method: "PATCH",
+      body: { comment },
+    }),
+
+  reject: (recommendationId, comment = "") =>
+    request(`/ai-recommendations/${recommendationId}/reject`, {
+      method: "PATCH",
+      body: { comment },
+    }),
 };

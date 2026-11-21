@@ -105,7 +105,7 @@ export default function useRecommendationWorkflow() {
         throw new Error("The recommendation response was incomplete. Please try again.");
       }
       setRecommendation(data.recommendation);
-      setReviewStatus("pending");
+      setReviewStatus(data.recommendation.reviewStatus || data.recommendation.status || "pending");
       return true;
     } catch (err) {
       if (requestId === latestGeneration.current) {
@@ -125,16 +125,38 @@ export default function useRecommendationWorkflow() {
     setNotice("");
   }, []);
 
-  const saveDraft = useCallback(() => {
-    if (!recommendation) return;
-    setReviewStatus("draft");
-    setNotice("Saved in this page preview. Persistent saving will be connected with the backend.");
+  const saveDraft = useCallback(async () => {
+    if (!recommendation?.id) return false;
+    setError("");
+    setNotice("");
+    try {
+      const data = await recommendationApiService.saveDraft(recommendation.id);
+      const updated = data?.recommendation;
+      if (updated) setRecommendation(updated);
+      setReviewStatus(updated?.reviewStatus || updated?.status || "draft");
+      setNotice("Recommendation draft saved to your account.");
+      return true;
+    } catch (err) {
+      setError(err.message || "The recommendation draft could not be saved.");
+      return false;
+    }
   }, [recommendation]);
 
-  const approve = useCallback(() => {
-    if (!recommendation) return;
-    setReviewStatus("approved");
-    setNotice("Approved in this frontend preview. No campaign has been launched and no leads or messages have been sent.");
+  const approve = useCallback(async () => {
+    if (!recommendation?.id) return false;
+    setError("");
+    setNotice("");
+    try {
+      const data = await recommendationApiService.approve(recommendation.id);
+      const updated = data?.recommendation;
+      if (updated) setRecommendation(updated);
+      setReviewStatus(updated?.reviewStatus || updated?.status || "approved");
+      setNotice("Recommendation approved and saved. No campaign has been launched and no leads or messages have been sent.");
+      return true;
+    } catch (err) {
+      setError(err.message || "The recommendation could not be approved.");
+      return false;
+    }
   }, [recommendation]);
 
   const refreshCampaigns = useCallback(() => loadCampaigns(), [loadCampaigns]);
