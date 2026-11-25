@@ -62,6 +62,9 @@ export async function generateWithGemini({ systemPrompt, userPrompt, exampleFile
     generationConfig: {
       responseMimeType: "application/json",
       maxOutputTokens: env.ai.maxOutputTokens,
+      ...(model === "gemini-3-flash-preview" && {
+        thinkingConfig: { thinkingLevel: "minimal" },
+      }),
     },
   };
 
@@ -84,7 +87,8 @@ export async function generateWithGemini({ systemPrompt, userPrompt, exampleFile
       if (response.status !== 503 || attempt >= 2) break;
       const unavailable = providerError(response, payload, model);
       const backoffMs = Math.max(Number(unavailable.retryAfter || 0) * 1000, 750 * 2 ** attempt + Math.random() * 250);
-      if (backoffMs > 3000 || Date.now() + backoffMs + 1000 >= deadline) break;
+      // Leave enough time for the next generation attempt after waiting.
+      if (Date.now() + backoffMs + 5000 >= deadline) break;
       await delay(backoffMs, undefined, { signal });
     }
   } catch (error) {

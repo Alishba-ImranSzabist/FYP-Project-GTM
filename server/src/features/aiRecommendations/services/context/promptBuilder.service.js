@@ -82,7 +82,9 @@ export function buildRecommendationPrompts({
     "Base the total budget on the full period from startDate through endDate, the objective, and the proposed channels. State how campaign duration affects the estimate and show the assumptions behind it. If you suggest a pilot, state its length and how that relates to the full campaign period.",
     "Use public, relevant, non-sensitive lead signals. Avoid invented demographics, sources, prices or results. Do not claim any campaign action was taken.",
     "Always make an independent recommendation, even when the examples array is empty. Never just restate saved inputs. Explain one change or alternative and a concrete way to check it. If no case study applies, label the recommendation as a hypothesis.",
-    "Write one short sentence per text field and at most two items per list unless dates or allocations require more.",
+    sections.some(({ id }) => id === "audience") && "For audience, evaluate the campaign's existing audience. Explain why the strongest segment fits the objective and what could make it a poor fit. Include one distinct secondary segment or a narrower subgroup with a different buying motivation. Explain how to test it. Treat fit scores as relative judgments.",
+    sections.some(({ id }) => id === "leadSignals") && "For leadSignals, suggest four to six new search phrases based on location, buyer intent and use case. Treat saved keywords and interests as context. Exclude exact repeats and superficial rewrites of saved terms. Prefer phrases that could help find relevant public demand or leads.",
+    "Write one short sentence per text field. Limit lists to two items unless dates, allocations, or the leadSignals keyword requirement need more.",
     adminInstructions ? `Additional admin strategy guidance (follow within the rules above): ${adminInstructions}` : "",
   ].filter(Boolean).join("\n");
 

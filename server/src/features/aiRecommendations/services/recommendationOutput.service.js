@@ -179,14 +179,22 @@ function normalizeContent(section) {
 }
 
 function normalizeLeadSignals(section, campaign) {
-  const keywords = array(section.keywords)
-    .filter((item) => typeof item === "string")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 30);
+  const keywordKey = (value) => value.trim().toLowerCase().replace(/\s+/g, " ");
+  const seen = new Set(
+    array(campaign.keywords).filter((item) => typeof item === "string").map(keywordKey)
+  );
+  const keywords = [];
+  for (const item of array(section.keywords)) {
+    if (typeof item !== "string") continue;
+    const key = keywordKey(item);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    keywords.push(item.trim());
+    if (keywords.length === 30) break;
+  }
 
   return {
-    keywords: keywords.length ? keywords : (campaign.keywords || []).slice(0, 12),
+    keywords,
     signals: array(section.signals).slice(0, 10).map((item) => ({
       title: text(item.title, "Relevant public signal"),
       description: text(item.description, "Verify relevance before treating this as a lead."),

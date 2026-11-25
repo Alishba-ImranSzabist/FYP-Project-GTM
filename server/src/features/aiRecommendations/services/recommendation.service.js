@@ -186,7 +186,7 @@ async function createCampaignRecommendation(userId, input, attempt) {
     recommendationStyle: input.recommendationStyle,
     contextMetadata: {
       configVersion: config.version,
-      promptVersion: "1.6.0",
+      promptVersion: "1.7.0",
     },
     usage: {
       inputTokens: providerResult.inputTokens,
