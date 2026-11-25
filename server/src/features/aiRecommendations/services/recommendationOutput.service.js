@@ -37,7 +37,7 @@ function normalizeEvidence(rawEvidence, approvedExamples = []) {
     .filter(Boolean)
     .map((example) => ({
       exampleId: String(example.exampleId),
-      campaignName: text(example.campaignName, "Approved campaign example"),
+      campaignName: text(example.campaignName, "Campaign example"),
       publisher: text(example.source?.publisher, ""),
       sourceTitle: text(example.source?.sourceTitle, ""),
       sourceUrl: safeHttpUrl(example.source?.sourceUrl),
@@ -49,8 +49,8 @@ function normalizeEvidence(rawEvidence, approvedExamples = []) {
     note: text(
       rawEvidence?.note,
       examples.length
-        ? "These approved examples provide context, not guaranteed outcomes."
-        : "No approved campaign example was directly attributed to this section; treat this recommendation as a planning hypothesis."
+        ? "These publisher references provide strategy context."
+        : "Treat this recommendation as a planning hypothesis."
     ),
   };
 }
@@ -122,12 +122,14 @@ function normalizeChannels(section, campaign) {
   return { items };
 }
 
+const budgetAmount = (value, fallback = null) => value == null || value === "" ? fallback : finiteNumber(value, fallback);
+
 function normalizeBudget(section, raw, campaign) {
   const rawRange = section.range || {};
-  const fallbackMin = finiteNumber(raw.overview?.budgetMin, campaign.budget);
-  const fallbackMax = finiteNumber(raw.overview?.budgetMax, campaign.budget);
-  const min = finiteNumber(rawRange.min, fallbackMin);
-  const max = finiteNumber(rawRange.max, fallbackMax);
+  const fallbackMin = budgetAmount(raw.overview?.budgetMin);
+  const fallbackMax = budgetAmount(raw.overview?.budgetMax);
+  const min = budgetAmount(rawRange.min, fallbackMin);
+  const max = budgetAmount(rawRange.max, fallbackMax);
 
   if (min === null || max === null || min < 0 || max < min) {
     throw new ApiError(
@@ -152,8 +154,10 @@ function normalizeBudget(section, raw, campaign) {
     });
   }
 
+  const pilotSpend = section.pilotSpend == null ? null : finiteNumber(section.pilotSpend);
   return {
     range: { min, max },
+    ...(pilotSpend != null && pilotSpend >= 0 && pilotSpend <= max ? { pilotSpend } : {}),
     currency: text(section.currency, campaign.currency || "PKR"),
     allocations,
     note: text(
@@ -291,17 +295,21 @@ export function normalizeRecommendationOutput(
   const channels = sections.find((section) => section.id === "channels");
 
   const firstAudience = audience?.items?.[0];
-  const budgetMin = budget?.range?.min ?? finiteNumber(raw.overview?.budgetMin, campaign.budget);
-  const budgetMax = budget?.range?.max ?? finiteNumber(raw.overview?.budgetMax, campaign.budget);
+  const budgetMin = budget?.range?.min ?? budgetAmount(raw.overview?.budgetMin);
+  const budgetMax = budget?.range?.max ?? budgetAmount(raw.overview?.budgetMax);
 
-  const budgetIsEstimate = budgetMin === null || budgetMax === null || Boolean(raw.overview?.budgetIsEstimate);
+  if (budgetMin === null || budgetMax === null || budgetMin < 0 || budgetMax < budgetMin) {
+    throw new ApiError(
+      502,
+      "A budget range is required for this recommendation. Please regenerate."
+    );
+  }
 
   const overview = {
     audience: text(raw.overview?.audience, firstAudience?.title || "Relevant campaign audience"),
     audienceMatch: clamp(raw.overview?.audienceMatch ?? firstAudience?.match, 0, 100),
     budgetMin,
     budgetMax,
-    budgetIsEstimate,
     currency: text(raw.overview?.currency, campaign.currency || "PKR"),
     topChannel: text(
       raw.overview?.topChannel,
@@ -325,8 +333,12 @@ export function normalizeRecommendationOutput(
     targetAudience: overview.audience,
     budgetMin,
     budgetMax,
-    budgetIsEstimate: overview.budgetIsEstimate,
     suggestedDate,
+    ...(raw.assessment && { assessment: {
+      recommendation: text(raw.assessment.recommendation),
+      rationale: text(raw.assessment.rationale),
+      validation: text(raw.assessment.validation),
+    } }),
     strategy: text(
       raw.strategy,
       sections.map((section) => section.summary).filter(Boolean).join(" ")

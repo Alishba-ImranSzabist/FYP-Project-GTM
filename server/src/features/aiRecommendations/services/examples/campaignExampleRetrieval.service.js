@@ -1,57 +1,31 @@
-import { MAX_RETRIEVED_EXAMPLES } from "../../constants/recommendation.constants.js";
-import { CampaignExample } from "../../models/campaignExample.model.js";
+﻿import { CampaignExample } from "../../models/campaignExample.model.js";
 import { scoreCampaignExample } from "./exampleScoring.service.js";
 
-/**
- * Retrieves only admin-approved, active campaign examples.
- * The current dataset is small (approximately 100 records), so a transparent
- * weighted keyword/metadata ranker is sufficient; no vector DB is required.
- */
-export async function retrieveRelevantCampaignExamples(
-  campaign,
-  limit = MAX_RETRIEVED_EXAMPLES
-) {
-  const safeLimit = Math.max(1, Math.min(Number(limit) || MAX_RETRIEVED_EXAMPLES, MAX_RETRIEVED_EXAMPLES));
+const MAX_EXAMPLES = 5;
 
-  const approvedExamples = await CampaignExample.find({
-    "dataQuality.reviewStatus": "approved",
-    "dataQuality.isActive": true,
-  })
-    .limit(500)
+export const campaignEvidenceFilter = {
+  exampleId: { $type: "string", $regex: /\S/ },
+  recordType: "published_case_study",
+  "dataQuality.verificationStatus": "publisher_or_case_author_reported",
+  "usagePolicy.canInformStrategy": true,
+  "source.publisher": { $type: "string", $regex: /\S/ },
+  "source.sourceTitle": { $type: "string", $regex: /\S/ },
+  "source.sourceUrl": { $type: "string", $regex: /^https?:\/\/[^\s/]+/i },
+  "dataQuality.reviewStatus": { $ne: "rejected" },
+};
+
+export async function retrieveRelevantCampaignExamples(campaign) {
+  const examples = await CampaignExample.find(campaignEvidenceFilter, null, { strictQuery: false })
+    .sort({ exampleId: 1 })
     .lean();
 
-  return approvedExamples
-    .map((example) => ({
-      example,
-      relevanceScore: scoreCampaignExample(example, campaign),
-    }))
-    .filter((item) => item.relevanceScore > 0)
-    .sort((a, b) => {
-      if (b.relevanceScore !== a.relevanceScore) {
-        return b.relevanceScore - a.relevanceScore;
-      }
-      return String(a.example.exampleId || a.example._id).localeCompare(
-        String(b.example.exampleId || b.example._id)
-      );
-    })
-    .slice(0, safeLimit)
-    .map(({ example, relevanceScore }) => ({
-      exampleId: example.exampleId || String(example._id),
-      campaignName: example.campaignName || "",
-      platform: example.platform || "",
-      industry: example.industry || "",
-      productCategory: example.productCategory || "",
-      objective: example.objective || "",
-      market: example.market || {},
-      targetAudience: example.targetAudience || {},
-      channels: example.channels || [],
-      adFormats: example.adFormats || [],
-      strategyPatterns: example.strategyPatterns || [],
-      contentPatterns: example.contentPatterns || [],
-      reportedResults: example.reportedResults || [],
-      source: example.source || {},
+  return examples
+    .map((example) => ({ example, score: scoreCampaignExample(example, campaign) }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, MAX_EXAMPLES)
+    .map(({ example }) => ({
+      ...example,
       limitations: example.dataQuality?.limitations || [],
-      verificationStatus: example.dataQuality?.verificationStatus || "",
-      relevanceScore,
     }));
 }

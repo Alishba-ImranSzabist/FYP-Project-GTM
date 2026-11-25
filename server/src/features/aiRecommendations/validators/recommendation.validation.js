@@ -5,6 +5,7 @@ const objectId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid MongoDB id.");
 export const generateRecommendationSchema = z
   .object({
     campaignId: objectId,
+    previousRecommendationId: objectId.optional(),
     model: z.enum(["fast", "detailed"]).default("fast"),
     recommendationStyle: z
       .enum(["conservative", "balanced", "creative"])

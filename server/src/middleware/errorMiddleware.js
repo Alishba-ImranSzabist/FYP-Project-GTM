@@ -26,8 +26,10 @@ export const errorHandler = (err, _req, res, _next) => {
 
   if (status >= 500) {
     console.error(err);
-    if (env.isProd) message = "Something went wrong on our side. Please try again.";
+    if (env.isProd && !(err instanceof ApiError)) message = "Something went wrong on our side. Please try again.";
   }
+
+  if (err instanceof ApiError && err.retryAfter) res.set("Retry-After", err.retryAfter);
 
   res.status(status).json({
     success: false,

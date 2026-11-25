@@ -15,6 +15,8 @@ const sectionSchema = z
 
 export const updateRecommendationConfigSchema = z
   .object({
+    adminInstructions: z.string().trim().max(3000).optional(),
+    expectedVersion: z.number().int().positive().optional(),
     sections: z
       .array(sectionSchema)
       .min(1, "At least one recommendation section is required.")

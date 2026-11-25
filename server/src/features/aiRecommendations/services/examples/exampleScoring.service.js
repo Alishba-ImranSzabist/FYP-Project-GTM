@@ -52,7 +52,7 @@ export function scoreCampaignExample(example, campaign) {
     Math.min(
       overlapCount(
         example.productCategory,
-        `${campaign.productName || ""} ${campaign.description || ""} ${(campaign.keywords || []).join(" ")}`
+        `${campaign.productName || ""} ${campaign.description || ""} ${(Array.isArray(campaign.keywords) ? campaign.keywords : []).join(" ")}`
       ),
       4
     ) * 2;
@@ -83,7 +83,7 @@ export function scoreCampaignExample(example, campaign) {
 
   const campaignKeywords = Array.isArray(campaign.keywords) ? campaign.keywords : [];
   const exampleText = normalize(
-    `${example.campaignName || ""} ${(example.strategyPatterns || []).join(" ")} ${(example.tags || []).join(" ")}`
+    `${example.campaignName || ""} ${(Array.isArray(example.strategyPatterns) ? example.strategyPatterns : []).join(" ")} ${(Array.isArray(example.tags) ? example.tags : []).join(" ")}`
   );
 
   const keywordMatches = campaignKeywords.filter((keyword) =>

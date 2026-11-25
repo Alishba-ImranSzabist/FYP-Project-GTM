@@ -49,11 +49,13 @@ test("prompt builder combines campaign context, approved examples and admin sect
 
   assert.equal(userPrompt.campaign.name, "Velvet Winter Collection 2026");
   assert.equal(userPrompt.businessProfile.businessName, "Sample Fashion House");
-  assert.equal(userPrompt.approvedCampaignExamples[0].exampleId, "SYN-001");
+  assert.equal(userPrompt.eligibleCampaignExamples[0].exampleId, "SYN-001");
+  assert.equal(userPrompt.sectionInstructions.audience, sections[0].prompt);
+  assert.equal(userPrompt.eligibleCampaignExamples[0].source, undefined);
   assert.equal(
     userPrompt.requiredOutputContract.sections[0].evidence.exampleIds[0].includes("exact exampleId"),
     true
   );
   assert.match(result.systemPrompt, /Never invent an ID/);
-  assert.match(result.systemPrompt, /approved campaign examples/);
+  assert.match(result.systemPrompt, /eligible campaign examples/);
 });

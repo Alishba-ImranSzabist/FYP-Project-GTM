@@ -1,165 +1,137 @@
+import { setTimeout as delay } from "node:timers/promises";
 import { env } from "../../../../config/env.js";
 import { ApiError } from "../../../../utils/ApiError.js";
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const MAX_ATTEMPTS = 3;
-const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
-
-function retryDelay(response, attempt) {
-  const retryAfter = Number(response?.headers?.get("retry-after"));
-  if (Number.isFinite(retryAfter) && retryAfter > 0) {
-    return Math.min(retryAfter * 1000, 15000);
-  }
-  return 1500 * (2 ** (attempt - 1));
+function withRetryHint(error, response, details) {
+  const header = response.headers.get("retry-after");
+  const dateDelay = header ? Math.ceil((Date.parse(header) - Date.now()) / 1000) : 0;
+  const googleDelay = details.find((detail) => detail?.["@type"] === "type.googleapis.com/google.rpc.RetryInfo")?.retryDelay;
+  const seconds = header && /^\d+$/.test(header)
+    ? Number(header)
+    : dateDelay > 0 ? dateDelay : Math.ceil(Number.parseFloat(googleDelay));
+  if (Number.isSafeInteger(seconds) && seconds > 0) error.retryAfter = String(seconds);
+  return error;
 }
 
-export async function generateWithGemini({ systemPrompt, userPrompt }) {
+function providerError(response, payload, model) {
+  const { status } = response;
+  const reason = payload?.error?.status;
+  const details = Array.isArray(payload?.error?.details) ? payload.error.details : [];
+  const quota = details.find((detail) => detail?.violations)?.violations;
+  console.warn("[Gemini] Request rejected", { model, status, reason, quotaIds: quota?.map((item) => item.quotaId) });
+
+  if (status === 429) {
+    const error = ApiError.tooManyRequests("Gemini quota or rate limit reached. Check the Gemini project's quota and try again when it resets.");
+    return withRetryHint(error, response, details);
+  }
+  if (status === 503) {
+    return withRetryHint(new ApiError(503, "Gemini is temporarily overloaded. Try again shortly."), response, details);
+  }
+  if (status === 404) {
+    return new ApiError(502, "Gemini could not find the configured model or reference file. Ask an administrator to check GEMINI_MODEL and the examples refresh.");
+  }
+  if (status === 401 || status === 403 || payload?.error?.details?.some?.((detail) => detail.reason === "API_KEY_INVALID")) {
+    return new ApiError(502, "Gemini rejected the provider credentials. Ask an administrator to check the Gemini configuration.");
+  }
+  return new ApiError(502, "Gemini could not process the recommendation. Try again or contact an administrator.");
+}
+
+export async function generateWithGemini({ systemPrompt, userPrompt, exampleFile }) {
   const apiKey = env.ai.geminiApiKey;
-  const model = env.ai.geminiModel;
+  const model = env.ai.geminiModel.replace(/^models\//, "");
 
   if (!apiKey) {
-    throw ApiError.badRequest(
-      "Gemini is not configured. Add GEMINI_API_KEY to server/.env and restart the server."
-    );
+    const error = new ApiError(503, "Gemini is not configured. Ask an administrator to check the Gemini configuration.");
+    error.fallbackReason = "not_configured";
+    throw error;
   }
-
   if (!systemPrompt?.trim() || !userPrompt?.trim()) {
     throw ApiError.badRequest("System prompt or campaign prompt is missing.");
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateContent`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
   const requestBody = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
-    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    contents: [{
+      role: "user",
+      parts: [
+        { text: userPrompt },
+        ...(exampleFile ? [{ fileData: { fileUri: exampleFile.uri, mimeType: exampleFile.mimeType } }] : []),
+      ],
+    }],
     generationConfig: {
       responseMimeType: "application/json",
       maxOutputTokens: env.ai.maxOutputTokens,
     },
   };
 
-  console.log("[Gemini] Using model:", model);
-
   let response;
-  let payload = {};
-
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
-    try {
+  let payload;
+  const signal = AbortSignal.timeout(env.ai.requestTimeoutMs);
+  const deadline = Date.now() + env.ai.requestTimeoutMs;
+  try {
+    for (let attempt = 0; ; attempt += 1) {
       response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        signal: AbortSignal.timeout(env.ai.requestTimeoutMs),
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        signal,
         body: JSON.stringify(requestBody),
       });
-
-      payload = await response.json().catch(() => ({}));
-      if (response.ok) break;
-
-      const status = response.status;
-      const providerMessage = payload?.error?.message || "No provider message returned";
-      const providerReason = payload?.error?.status || "UNKNOWN";
-
-      console.error("[Gemini] Provider error:", {
-        status,
-        model,
-        attempt,
-        reason: providerReason,
-        message: providerMessage,
+      payload = await response.json().catch((error) => {
+        if (error instanceof SyntaxError) return {};
+        throw error;
       });
-
-      const isInvalidKey =
-        providerReason === "UNAUTHENTICATED" ||
-        (Array.isArray(payload?.error?.details) &&
-          payload.error.details.some((detail) => detail?.reason === "API_KEY_INVALID"));
-
-      if (isInvalidKey || status === 401 || status === 403) {
-        throw new ApiError(
-          401,
-          "Gemini rejected the API key. Create or verify GEMINI_API_KEY in server/.env."
-        );
-      }
-
-      if (RETRYABLE_STATUSES.has(status) && attempt < MAX_ATTEMPTS) {
-        const delay = retryDelay(response, attempt);
-        console.log(`[Gemini] Temporary provider error. Retry ${attempt + 1}/${MAX_ATTEMPTS} in ${delay}ms.`);
-        await sleep(delay);
-        continue;
-      }
-
-      if (status === 429 || status === 503) {
-        throw new ApiError(
-          503,
-          "Gemini is temporarily busy or rate-limited. Please wait and try again."
-        );
-      }
-
-      if (status === 404) {
-        throw new ApiError(
-          502,
-          `Gemini model '${model}' was not found or is not available to this API key. Check GEMINI_MODEL.`
-        );
-      }
-
-      if (status >= 500) {
-        throw new ApiError(502, "Gemini provider is temporarily unavailable.");
-      }
-
-      throw new ApiError(
-        502,
-        `Gemini rejected the request (provider status ${status}). Check server logs for the provider message.`
-      );
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
-
-      if (error?.name === "TimeoutError" || error?.name === "AbortError") {
-        if (attempt < MAX_ATTEMPTS) {
-          const delay = 1500 * (2 ** (attempt - 1));
-          console.log(`[Gemini] Request timed out. Retry ${attempt + 1}/${MAX_ATTEMPTS} in ${delay}ms.`);
-          await sleep(delay);
-          continue;
-        }
-        throw new ApiError(504, "Gemini took too long to respond after multiple attempts. Please try again.");
-      }
-
-      console.error("[Gemini] Connection error:", error.message);
-      if (attempt < MAX_ATTEMPTS) {
-        await sleep(1500 * (2 ** (attempt - 1)));
-        continue;
-      }
-
-      throw new ApiError(
-        503,
-        "Gemini is temporarily unavailable. Please try again shortly."
-      );
+      if (response.status !== 503 || attempt >= 2) break;
+      const unavailable = providerError(response, payload, model);
+      const backoffMs = Math.max(Number(unavailable.retryAfter || 0) * 1000, 750 * 2 ** attempt + Math.random() * 250);
+      if (backoffMs > 3000 || Date.now() + backoffMs + 1000 >= deadline) break;
+      await delay(backoffMs, undefined, { signal });
     }
+  } catch (error) {
+    if (error?.name === "TimeoutError" || error?.name === "AbortError") {
+      throw new ApiError(504, "Gemini took too long to respond. Please try again.");
+    }
+    console.warn("[Gemini] Connection failed", { model, code: error?.cause?.code });
+    const connectionError = new ApiError(503, "Gemini is temporarily unreachable. Try again shortly.");
+    connectionError.fallbackReason = "connection";
+    throw connectionError;
   }
 
-  if (!response?.ok) {
-    throw new ApiError(502, "Gemini could not generate the recommendation.");
+  if (!response.ok) {
+    const error = providerError(response, payload, model);
+    error.providerStatus = response.status;
+    throw error;
   }
 
   const candidate = payload?.candidates?.[0];
+  const usage = {
+    inputTokens: payload?.usageMetadata?.promptTokenCount,
+    outputTokens: payload?.usageMetadata?.candidatesTokenCount,
+    thinkingTokens: payload?.usageMetadata?.thoughtsTokenCount,
+    cachedInputTokens: payload?.usageMetadata?.cachedContentTokenCount,
+    totalTokens: payload?.usageMetadata?.totalTokenCount,
+  };
+  console.info("[Gemini] Generation usage", { model, ...usage, finishReason: candidate?.finishReason, blockReason: payload?.promptFeedback?.blockReason });
+
+  if (candidate?.finishReason === "MAX_TOKENS") {
+    const error = new ApiError(502, "Gemini reached its output token limit before finishing the recommendation. Ask an administrator to review the output limit.");
+    error.providerStatus = response.status;
+    error.totalTokens = usage.totalTokens;
+    throw error;
+  }
+
   const text = candidate?.content?.parts
-    ?.map((part) => part.text || "")
+    ?.filter((part) => !part.thought)
+    .map((part) => part.text || "")
     .join("")
     .trim();
 
-  if (!text) {
-    console.error("[Gemini] Empty response:", {
-      model,
-      finishReason: candidate?.finishReason,
-      promptFeedback: payload?.promptFeedback,
-    });
-    throw new ApiError(502, "Gemini returned an empty recommendation. Please regenerate.");
+  if (!text || (candidate.finishReason && candidate.finishReason !== "STOP")) {
+    const error = new ApiError(502, "Gemini did not complete the recommendation. Review the campaign details and try again.");
+    error.providerStatus = response.status;
+    error.totalTokens = usage.totalTokens;
+    throw error;
   }
 
-  return {
-    text,
-    provider: "gemini",
-    providerModel: payload.modelVersion || model,
-    inputTokens: Number(payload.usageMetadata?.promptTokenCount || 0),
-    outputTokens: Number(payload.usageMetadata?.candidatesTokenCount || 0),
-  };
+  return { text, provider: "gemini", providerModel: payload.modelVersion || model, ...usage };
 }

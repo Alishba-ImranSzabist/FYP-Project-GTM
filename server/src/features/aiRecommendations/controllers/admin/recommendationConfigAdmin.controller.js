@@ -11,7 +11,7 @@ export const getConfig = asyncHandler(async (_req, res) => {
 });
 
 export const updateConfig = asyncHandler(async (req, res) => {
-  const config = await updateRecommendationConfig(req.user._id, req.body.sections);
+  const config = await updateRecommendationConfig(req.user._id, req.body);
   sendSuccess(
     res,
     { config: serializeConfig(config) },

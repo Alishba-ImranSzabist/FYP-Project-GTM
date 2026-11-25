@@ -6,7 +6,10 @@ export const generate = asyncHandler(async (req, res) => {
     req.user._id,
     req.body
   );
-  sendSuccess(res, { recommendation }, "Recommendation generated.", 201);
+  if (recommendation.reused) {
+    return sendSuccess(res, { recommendation }, "Existing rules-based plan kept.");
+  }
+  return sendSuccess(res, { recommendation }, "Recommendation generated.", 201);
 });
 
 export const list = asyncHandler(async (req, res) => {

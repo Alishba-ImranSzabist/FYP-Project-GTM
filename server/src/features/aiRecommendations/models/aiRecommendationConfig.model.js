@@ -28,6 +28,12 @@ const configSchema = new Schema(
   {
     key: { type: String, required: true, unique: true, default: DEFAULT_CONFIG_KEY },
     version: { type: Number, min: 1, default: 1 },
+    exampleFile: {
+      uri: String,
+      mimeType: String,
+      expiresAt: Date,
+    },
+    adminInstructions: { type: String, trim: true, maxlength: 3000, default: "" },
     sections: {
       type: [sectionSchema],
       default: () => DEFAULT_RECOMMENDATION_SECTIONS.map((section) => ({ ...section })),

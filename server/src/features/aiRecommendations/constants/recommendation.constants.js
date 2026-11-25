@@ -1,13 +1,8 @@
-export const RECOMMENDATION_MODELS = Object.freeze({
+﻿export const RECOMMENDATION_MODELS = Object.freeze({
   fast: {
     key: "fast",
     provider: "gemini",
     label: "Gemini Flash",
-  },
-  detailed: {
-    key: "detailed",
-    provider: "claude",
-    label: "Claude Sonnet",
   },
 });
 
@@ -31,7 +26,6 @@ export const EXAMPLE_REVIEW_STATUS = Object.freeze({
 });
 
 export const MAX_RECOMMENDATION_SECTIONS = 12;
-export const MAX_RETRIEVED_EXAMPLES = 5;
 
 export const DEFAULT_RECOMMENDATION_SECTIONS = Object.freeze([
   {
@@ -79,3 +73,4 @@ export const DEFAULT_RECOMMENDATION_SECTIONS = Object.freeze([
 ]);
 
 export const DEFAULT_CONFIG_KEY = "default";
+

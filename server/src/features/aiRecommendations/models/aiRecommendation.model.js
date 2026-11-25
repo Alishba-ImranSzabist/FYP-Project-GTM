@@ -40,6 +40,11 @@ const aiRecommendationSchema = new Schema(
     budgetMax: { type: Number, min: 0, default: null },
     suggestedDate: { type: Date, default: null },
     strategy: { type: String, trim: true, default: "" },
+    assessment: {
+      recommendation: String,
+      rationale: String,
+      validation: String,
+    },
     status: {
       type: String,
       enum: Object.values(RECOMMENDATION_STATUS),
@@ -51,8 +56,9 @@ const aiRecommendationSchema = new Schema(
     overview: { type: Schema.Types.Mixed, required: true },
     sections: { type: [Schema.Types.Mixed], default: [] },
     modelId: { type: String, enum: ["fast", "detailed"], required: true },
-    provider: { type: String, enum: ["gemini", "claude"], required: true },
+    provider: { type: String, enum: ["gemini", "rules"], required: true },
     providerModel: { type: String, required: true },
+    fallbackReason: { type: String, enum: ["rate_limit", "overloaded", "timeout", "connection", "not_configured"] },
     recommendationStyle: {
       type: String,
       enum: ["conservative", "balanced", "creative"],
@@ -86,6 +92,9 @@ const aiRecommendationSchema = new Schema(
     usage: {
       inputTokens: { type: Number, default: 0 },
       outputTokens: { type: Number, default: 0 },
+      thinkingTokens: Number,
+      cachedInputTokens: Number,
+      totalTokens: Number,
       durationMs: { type: Number, default: 0 },
     },
 

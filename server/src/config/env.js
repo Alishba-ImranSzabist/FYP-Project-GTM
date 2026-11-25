@@ -1,10 +1,14 @@
-import "dotenv/config";
+import { config } from "dotenv";
+import path from "path";
+
+// Load environment variables from server/.env (gitignored — kabhi commit na karein)
+config({ path: path.resolve(process.cwd(), ".env") });
 
 const required = ["MONGO_URI", "JWT_SECRET"];
 const missing = required.filter((key) => !process.env[key]);
 if (missing.length) {
   console.error(`Missing required environment variables: ${missing.join(", ")}`);
-  console.error("Copy server/.env.example to server/.env and fill in the values.");
+  console.error("Check server/.env and fill in the values.");
   process.exit(1);
 }
 
@@ -34,12 +38,11 @@ export const env = Object.freeze({
   },
 
   // AI keys stay on the server. Never expose these through VITE_ variables.
+  // Only Google Gemini is used for AI recommendations. Anthropic/Claude has been removed.
   ai: {
     geminiApiKey: process.env.GEMINI_API_KEY || "",
-    geminiModel: process.env.GEMINI_MODEL || "gemini-3.8-flash",
-    anthropicApiKey: process.env.ANTHROPIC_API_KEY || "",
-    claudeModel: process.env.CLAUDE_MODEL || "claude-3-5-sonnet-20241022",
-    requestTimeoutMs: Number(process.env.AI_REQUEST_TIMEOUT_MS) || 90000,
-    maxOutputTokens: Number(process.env.AI_MAX_OUTPUT_TOKENS) || 8192,
+    geminiModel: process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
+    requestTimeoutMs: Number(process.env.AI_REQUEST_TIMEOUT_MS) || 25000,
+    maxOutputTokens: Number(process.env.AI_MAX_OUTPUT_TOKENS) || 4096,
   },
 });

@@ -1,7 +1,17 @@
 import mongoose from "mongoose";
 import { env } from "./env.js";
 
-export async function connectDB() {
+let connectionPromise;
+
+export function connectDB() {
+  connectionPromise ??= openConnection().catch((error) => {
+    connectionPromise = undefined;
+    throw error;
+  });
+  return connectionPromise;
+}
+
+async function openConnection() {
   mongoose.set("strictQuery", true);
   const mongoUri = new URL(env.mongoUri);
   if (
