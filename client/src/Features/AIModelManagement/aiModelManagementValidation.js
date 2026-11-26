@@ -32,7 +32,7 @@ export function validateProviderConfiguration(values, apiKey) {
 export function validateModelConfiguration(values) {
   const errors = {};
 
-  ["fast", "detailed"].forEach((profile) => {
+  ["fast"].forEach((profile) => {
     const model = values[profile] || {};
     if (!model.provider) errors[`${profile}.provider`] = "Select a provider.";
     if (!hasText(model.modelId)) errors[`${profile}.modelId`] = "Model ID is required.";
@@ -53,7 +53,7 @@ export function validateModelConfiguration(values) {
     errors.retryAttempts = "Retry attempts must be between 0 and 5.";
   }
 
-  if (!["fast", "detailed"].includes(values.fallbackModel)) {
+  if (values.fallbackModel !== "fast") {
     errors.fallbackModel = "Choose a valid fallback model.";
   }
 

@@ -1,7 +1,7 @@
-import { Check, Search, Zap, ShieldCheck, Scale, Lightbulb } from "lucide-react";
+import { Check, Zap, ShieldCheck, Scale, Lightbulb } from "lucide-react";
 import { AI_RECOMMENDATION_MODELS, AI_RECOMMENDATION_STYLES } from "../recommendationSettings.js";
 
-const MODEL_ICONS = { fast: Zap, detailed: Search };
+const MODEL_ICONS = { fast: Zap };
 const STYLE_ICONS = {
   conservative: ShieldCheck,
   balanced: Scale,
@@ -23,51 +23,53 @@ function ScoreMeter({ label, score }) {
 
 export default function ModelSelection({ value, onChange, styleValue, onStyleChange }) {
   return (
-    <section className="air-model-section" aria-labelledby="air-model-title">
-      <div className="air-section-heading">
-        <div>
-          <span className="air-kicker">STEP 1 · MODEL</span>
-          <h2 id="air-model-title">Choose your AI model</h2>
-          <p>Pick one before we generate recommendations for this campaign.</p>
+    <div className="air-model-and-style">
+      <section className="air-model-section" aria-labelledby="air-model-title">
+        <div className="air-section-heading">
+          <div>
+            <span className="air-kicker">STEP 1 · MODEL</span>
+            <h2 id="air-model-title">AI model</h2>
+            <p>Campaign recommendations use the Gemini model configured on the server.</p>
+          </div>
         </div>
-      </div>
 
-      <div className="air-model-grid">
-        {AI_RECOMMENDATION_MODELS.map((model) => {
-          const Icon = MODEL_ICONS[model.id];
-          const selected = value === model.id;
-          return (
-            <button
-              key={model.id}
-              type="button"
-              className={`air-model-card ${selected ? "is-selected" : ""}`}
-              onClick={() => onChange(model.id)}
-              aria-pressed={selected}
-            >
-              <span className="air-model-card__topline">
-                <span className={`air-model-card__icon air-model-card__icon--${model.id}`}>
-                  <Icon size={20} aria-hidden="true" />
+        <div className="air-model-grid">
+          {AI_RECOMMENDATION_MODELS.map((model) => {
+            const Icon = MODEL_ICONS[model.id];
+            const selected = value === model.id;
+            return (
+              <button
+                key={model.id}
+                type="button"
+                className={`air-model-card ${selected ? "is-selected" : ""}`}
+                onClick={() => onChange(model.id)}
+                aria-pressed={selected}
+              >
+                <span className="air-model-card__topline">
+                  <span className={`air-model-card__icon air-model-card__icon--${model.id}`}>
+                    <Icon size={20} aria-hidden="true" />
+                  </span>
+                  <span className="air-model-card__radio" aria-hidden="true">
+                    {selected && <Check size={13} />}
+                  </span>
                 </span>
-                <span className="air-model-card__radio" aria-hidden="true">
-                  {selected && <Check size={13} />}
-                </span>
-              </span>
-              <span className="air-model-card__label">{model.label}</span>
-              <strong>{model.name}</strong>
-              <span className="air-model-card__provider">{model.provider}</span>
-              <span className="air-model-card__description">{model.description}</span>
-              <ul>
-                {model.benefits.map((benefit) => <li key={benefit}>{benefit}</li>)}
-              </ul>
-              <div className="air-model-card__scores">
-                <ScoreMeter label="Speed" score={model.speedScore} />
-                <ScoreMeter label="Detail" score={model.detailScore} />
-              </div>
-              <span className="air-model-card__time">Typical time <strong>{model.typicalTime}</strong></span>
-            </button>
-          );
-        })}
-      </div>
+                <span className="air-model-card__label">{model.label}</span>
+                <strong>{model.name}</strong>
+                <span className="air-model-card__provider">{model.provider}</span>
+                <span className="air-model-card__description">{model.description}</span>
+                <ul>
+                  {model.benefits.map((benefit) => <li key={benefit}>{benefit}</li>)}
+                </ul>
+                <div className="air-model-card__scores">
+                  <ScoreMeter label="Speed" score={model.speedScore} />
+                  <ScoreMeter label="Detail" score={model.detailScore} />
+                </div>
+                <span className="air-model-card__time">Typical time <strong>{model.typicalTime}</strong></span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="air-style-section" aria-labelledby="air-style-title">
         <div className="air-section-heading">
@@ -106,6 +108,6 @@ export default function ModelSelection({ value, onChange, styleValue, onStyleCha
           })}
         </div>
       </section>
-    </section>
+    </div>
   );
 }

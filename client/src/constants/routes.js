@@ -1,4 +1,4 @@
-export const ROUTES = Object.freeze({
+﻿export const ROUTES = Object.freeze({
   home: "/",
   login: "/login",
   verifyLogin: "/verify-login",
@@ -31,3 +31,4 @@ export const USER_ROLES = Object.freeze({
   serviceProvider: "service_provider",
   admin: "admin",
 });
+

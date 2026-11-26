@@ -1,4 +1,5 @@
 import { CalendarDays, Edit3, MapPin, Wallet } from "lucide-react";
+import RecommendationPicker from "./RecommendationPicker";
 import Button from "../../../Shared_Components/Button";
 import { ROUTES } from "../../../constants/routes";
 import { labelOf, OBJECTIVE_OPTIONS } from "../../Campaigns/campaignConfig";
@@ -38,19 +39,15 @@ export default function CampaignSelector({ campaigns, campaign, onChange }) {
         )}
       </div>
 
-      <label className="air-field-label" htmlFor="air-campaign-select">Your campaigns</label>
-      <select
-        id="air-campaign-select"
-        className="air-select"
+      <RecommendationPicker
+        label="Your campaigns"
         value={campaign.id}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {campaigns.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name} · {statusLabel(item.status)}
-          </option>
-        ))}
-      </select>
+        onChange={onChange}
+        options={campaigns.map((item) => ({
+          value: item.id,
+          label: `${item.name} \u00b7 ${statusLabel(item.status)}`,
+        }))}
+      />
 
       <div className="air-campaign-summary">
         <div className="air-campaign-summary__main">

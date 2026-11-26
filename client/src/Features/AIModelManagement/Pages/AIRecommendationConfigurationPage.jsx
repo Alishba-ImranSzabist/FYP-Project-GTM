@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Lock, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import Button from "../../../Shared_Components/Button";
 import FormField from "../../../Shared_Components/FormField";
@@ -15,7 +15,7 @@ import {
   validateRecommendationSection,
 } from "../aiModelManagementValidation";
 import { createDefaultPromptForSection } from "../data/promptTemplates.js";
-import { recommendationPromptSyncService } from "../Services/recommendationPromptSync.service.js";
+import { request } from "../../AIRecommendations/Services/recommendationApi.service";
 
 const EMPTY_SECTION_FORM = { title: "", description: "" };
 
@@ -35,7 +35,7 @@ function createSectionId(title, existingSections) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "") || "recommendation";
-  const baseId = `custom-${slug}-${Date.now().toString(36)}`;
+  const baseId = `custom-${slug.slice(0, 30)}-${Date.now().toString(36)}`;
   const existingIds = new Set(existingSections.map((section) => section.id));
   if (!existingIds.has(baseId)) return baseId;
 
@@ -66,7 +66,47 @@ export default function AIRecommendationConfigurationPage() {
   const [newSectionErrors, setNewSectionErrors] = useState({});
   const [deleteCandidate, setDeleteCandidate] = useState(null);
 
-  const sections = Array.isArray(values.sections) ? values.sections : [];
+  const [liveVersion, setLiveVersion] = useState(null);
+  const [publishing, setPublishing] = useState(false);
+  const [sectionFeedback, setSectionFeedback] = useState(null);
+  const sections = liveVersion === null ? [] : values.sections;
+
+  useEffect(() => {
+    let active = true;
+    request("/ai-recommendations/admin/config")
+      .then(({ config }) => {
+        if (!active) return;
+        setValues((current) => ({
+          ...current,
+          sections: config.sections.map((section) => ({ ...section, defaultPrompt: section.prompt })),
+          enabledSections: Object.fromEntries(config.sections.map(({ id, enabled }) => [id, enabled])),
+        }));
+        setLiveVersion(config.version);
+      })
+      .catch((error) => { if (active) setSectionFeedback({ type: "error", message: error.message }); });
+    return () => { active = false; };
+  }, [setValues]);
+
+  async function publishSections() {
+    setPublishing(true);
+    try {
+      const { config } = await request("/ai-recommendations/admin/config", {
+        method: "PUT",
+        body: {
+          expectedVersion: liveVersion,
+          sections: sections.map(({ id, title, defaultPrompt }, order) => ({
+            id, title, order, prompt: defaultPrompt, enabled: values.enabledSections?.[id] !== false,
+          })),
+        },
+      });
+      setLiveVersion(config.version);
+      setSectionFeedback({ type: "success", message: "Section settings published for new recommendations." });
+    } catch (error) {
+      setSectionFeedback({ type: "error", message: error.message });
+    } finally {
+      setPublishing(false);
+    }
+  }
 
   const updateSection = (sectionId, enabled) => {
     setValues((current) => ({
@@ -123,7 +163,7 @@ export default function AIRecommendationConfigurationPage() {
 
     setQualitySnapshot(null);
     setIsQualityEditing(false);
-    setNotice({ type: "success", message: "Recommendation settings saved." });
+    setNotice({ type: "success", message: "Quality preferences saved as a browser draft." });
   };
 
   const handleAddSection = () => {
@@ -152,17 +192,10 @@ export default function AIRecommendationConfigurationPage() {
     };
 
     setValues(nextValues);
-    const settingsSaved = saveDraft(nextValues);
-    const promptSaved = recommendationPromptSyncService.addSection(section);
-
     setNewSection(EMPTY_SECTION_FORM);
     setNewSectionErrors({});
     setIsAddOpen(false);
-    setNotice(
-      settingsSaved && promptSaved
-        ? { type: "success", message: "Recommendation section added." }
-        : { type: "error", message: "The section was added, but its session draft could not be saved." }
-    );
+    setSectionFeedback({ type: "info", message: "Section added. Publish sections to apply it." });
   };
 
   const handleDeleteSection = (section) => {
@@ -183,14 +216,8 @@ export default function AIRecommendationConfigurationPage() {
     };
 
     setValues(nextValues);
-    const settingsSaved = saveDraft(nextValues);
-    const promptSaved = recommendationPromptSyncService.removeSection(section.id);
     setDeleteCandidate(null);
-    setNotice(
-      settingsSaved && promptSaved
-        ? { type: "success", message: `“${section.title}” deleted.` }
-        : { type: "error", message: "The section was deleted from this view, but its session draft could not be saved." }
-    );
+    setSectionFeedback({ type: "info", message: "Section removed. Publish sections to apply the change." });
   };
 
   return (
@@ -199,6 +226,7 @@ export default function AIRecommendationConfigurationPage() {
 
       <ConfigPanel
         title="Recommendation sections"
+        description="Publish changes to update the sections generated by Gemini."
         actions={
           <Button
             variant="outline"
@@ -209,12 +237,16 @@ export default function AIRecommendationConfigurationPage() {
               setNewSectionErrors({});
               setNotice(null);
             }}
-            disabled={sections.length >= MAX_RECOMMENDATION_SECTIONS}
+            disabled={liveVersion === null || publishing || sections.length >= MAX_RECOMMENDATION_SECTIONS}
           >
             Add section
           </Button>
         }
       >
+        {sectionFeedback && <FeedbackMessage type={sectionFeedback.type}>{sectionFeedback.message}</FeedbackMessage>}
+        <Button variant="accent" size="sm" icon={Save} loading={publishing} disabled={liveVersion === null || publishing} onClick={publishSections}>
+          Publish sections
+        </Button>
         {isAddOpen ? (
           <div className="aimm-add-section-form">
             <div className="aimm-add-section-form__heading">
@@ -322,7 +354,7 @@ export default function AIRecommendationConfigurationPage() {
         {errors.enabledSections ? <small className="aimm-field__error">{errors.enabledSections}</small> : null}
       </ConfigPanel>
 
-      <ConfigPanel title="Quality and output limits">
+      <ConfigPanel title="Quality preferences" description="These controls are browser drafts. Publish section or global instructions to change generation behavior.">
         <fieldset
           disabled={!isQualityEditing}
           style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
@@ -417,7 +449,7 @@ export default function AIRecommendationConfigurationPage() {
             onClick={handleSaveQualitySettings}
             disabled={!isQualityEditing}
           >
-            Save recommendation settings
+            Save quality draft
           </Button>
         </div>
       </ConfigPanel>

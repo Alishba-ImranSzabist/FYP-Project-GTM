@@ -501,9 +501,9 @@
   background: var(--color-primary-soft);
   color: var(--color-primary);
 }
-.aimm-usage-stat > span:nth-child(2) { color: var(--color-muted); font-size: var(--text-xs); }
+.aimm-usage-stat > span:nth-child(2) { color: var(--color-heading); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
 .aimm-usage-stat > strong { color: var(--color-heading); font-family: var(--font-display); font-size: var(--text-xl); }
-.aimm-usage-stat > small { grid-column: 1 / -1; color: var(--color-subtle); font-size: 0.65rem; }
+.aimm-usage-stat > small { grid-column: 1 / -1; color: var(--color-heading); font-size: var(--text-sm); }
 .aimm-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.8rem; }
 .aimm-search-row { display: flex; align-items: flex-end; gap: 0.7rem; }
 .aimm-search-row > .field { flex: 1; }
@@ -606,29 +606,51 @@
 .aimm-delete-confirm > span { margin-right: auto; }
 
 /* Simplified user-level AI usage */
+.aimm-usage-page .pnl__head-text p,
+.aimm-usage-page .aimm-panel__head p,
+.aimm-usage-page .aimm-usage-stat > span:nth-child(2),
+.aimm-usage-page .aimm-usage-stat > strong,
+.aimm-usage-page .aimm-usage-stat > small {
+  color: var(--color-black);
+}
 .aimm-usage-stats--simple { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .aimm-usage-search { position: relative; max-width: 520px; }
 .aimm-usage-search .field { width: 100%; }
+.aimm-usage-search .field__label,
+.aimm-usage-search .field__input,
+.aimm-usage-search .field__input::placeholder { color: var(--color-black); }
+.aimm-usage-search .field__input {
+  padding-inline-end: 2.75rem;
+  border: 2px solid var(--color-primary);
+}
+.aimm-usage-search .field__input:hover,
+.aimm-usage-search .field__input:focus { border-color: var(--color-primary-deep); }
+.aimm-usage-search .field__input::placeholder { opacity: 1; }
 .aimm-usage-search__icon {
   position: absolute;
   right: 0.9rem;
   bottom: 0.85rem;
-  color: var(--color-muted);
+  color: var(--color-primary-deep);
   pointer-events: none;
 }
 .aimm-usage-table-wrap {
   width: 100%;
   overflow-x: auto;
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-primary);
   border-radius: var(--radius-md);
   background: var(--color-white);
 }
 .aimm-usage-table { width: 100%; min-width: 760px; border-collapse: collapse; text-align: left; }
+.aimm-usage-table th + th,
+.aimm-usage-table td + td {
+  border-inline-start: 1px solid var(--color-primary);
+}
 .aimm-usage-table th {
   padding: 0.8rem 0.9rem;
-  background: var(--color-cream-50);
-  color: var(--color-muted);
-  font-size: 0.68rem;
+  border-bottom: 2px solid var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-black);
+  font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
@@ -636,9 +658,10 @@
 }
 .aimm-usage-table td {
   padding: 0.85rem 0.9rem;
-  border-top: 1px solid var(--color-border);
-  color: var(--color-body);
-  font-size: var(--text-sm);
+  border-top: 1px solid var(--color-primary);
+  color: var(--color-black);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
   vertical-align: middle;
 }
 .aimm-usage-table tbody tr:hover { background: var(--color-cream-50); }
@@ -652,7 +675,7 @@
   font-weight: var(--weight-semibold);
   white-space: nowrap;
 }
-.aimm-usage-table__empty { padding: 1.8rem 1rem !important; color: var(--color-muted) !important; text-align: center; }
+.aimm-usage-table .aimm-usage-table__empty { padding: 1.8rem 1rem; text-align: center; }
 
 @media (max-width: 820px) {
   .aimm-recommendation-row__actions { margin-left: 42px; }
@@ -738,4 +761,24 @@
 .aimm-quality-settings.is-readonly .aimm-toggle.is-disabled {
   opacity: 0.82;
   cursor: not-allowed;
+}
+
+.aimm-runtime-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 0.85rem;
+  margin: 0;
+}
+.aimm-runtime-settings > div {
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-cream-50);
+}
+.aimm-runtime-settings dt { color: var(--color-muted); font-size: var(--text-sm); }
+.aimm-runtime-settings dd {
+  margin: 0.35rem 0 0;
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
 }

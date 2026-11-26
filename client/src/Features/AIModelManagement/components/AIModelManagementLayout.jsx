@@ -8,7 +8,7 @@ import "../../Panel/Panel.css";
 import "../AIModelManagement.css";
 
 /** Reuses the exact existing Admin sidebar, top bar, profile and logout flow. */
-export default function AIModelManagementLayout({ children }) {
+export default function AIModelManagementLayout({ children, className = "" }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -23,7 +23,7 @@ export default function AIModelManagementLayout({ children }) {
       user={user}
       onLogout={handleLogout}
     >
-      <div className="aimm-page">{children}</div>
+      <div className={`aimm-page ${className}`}>{children}</div>
     </PanelShell>
   );
 }

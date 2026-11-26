@@ -6,36 +6,20 @@
 export const AI_RECOMMENDATION_MODELS = Object.freeze([
   {
     id: "fast",
-    name: "Fast",
-    provider: "Google · Gemini 3.8 Flash",
-    label: "Good for a first look",
-    description: "A quick overview of the audience, budget and channel opportunities.",
+    name: "Gemini Flash",
+    provider: "Google Gemini",
+    label: "AI-powered recommendations",
+    description: "Generate a practical go-to-market plan using your campaign details and relevant published case studies.",
     benefits: [
-      "Ready in a few seconds",
-      "Good for a first look at audience and budget",
-      "Shorter reasoning on strategy",
+      "Uses your campaign information",
+      "References relevant published case studies",
+      "Returns structured recommendations for review",
     ],
-    typicalTime: "~ 5 seconds",
+    typicalTime: "Usually under 25 seconds",
     speedScore: 5,
-    detailScore: 2,
-  },
-  {
-    id: "detailed",
-    name: "Detailed",
-    provider: "Anthropic · Claude Sonnet 5",
-    label: "More thorough",
-    description: "Deeper reasoning across the audience, budget, channels and campaign plan.",
-    benefits: [
-      "Takes a little longer",
-      "Deeper reasoning on audience, budget and channels",
-      "Best when the decision matters",
-    ],
-    typicalTime: "~ 25 seconds",
-    speedScore: 3,
-    detailScore: 5,
+    detailScore: 4,
   },
 ]);
-
 
 export const AI_RECOMMENDATION_STYLES = Object.freeze([
   {
@@ -78,3 +62,10 @@ export const AI_RECOMMENDATION_LIMITS = Object.freeze({
  * Set to false when POST /api/ai-recommendations is available.
  */
 export const AI_RECOMMENDATIONS_DEMO_MODE = false;
+
+export function formatRecommendationChannel(value) {
+  const name = value?.trim();
+  if (name?.toLowerCase() === "email") return "Email";
+  if (name?.toLowerCase() === "instagram") return "Instagram";
+  return name;
+}

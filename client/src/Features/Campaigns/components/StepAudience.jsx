@@ -1,19 +1,33 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { MapPin, Plus } from "lucide-react";
 import FormField from "../../../Shared_Components/FormField";
 import { AUDIENCE_OPTIONS, CAMPAIGN_LIMITS as L } from "../campaignConfig";
 import ChipInput from "./ChipInput";
 import ChipSelect from "./ChipSelect";
 
 /** Step 2 — where, who, and which keywords describe the customer. */
-export default function StepAudience({ form }) {
+export default function StepAudience({ form, openLocationPicker, locationButtonRef }) {
   const { values, errors, handleChange, setValue, saving } = form;
   const [showMore, setShowMore] = useState(Boolean(values.extraNotes)); // "+ Add more details"
 
   return (
     <div className="cmp-grid">
       <div className="cmp-cell cmp-cell--full">
-       <ChipInput label="Target market (where) *"placeholder="+ Add location"values={values.targetLocations} onChange={(next) => setValue("targetLocations", next)} max={L.locations}error={errors.targetLocations} disabled={saving}/>
+        <ChipInput
+          label="Target market (where) *"
+          placeholder="+ Add location"
+          values={values.targetLocations}
+          onChange={(next) => setValue("targetLocations", next)}
+          max={L.locations}
+          hint={values.targetLocations.length >= L.locations ? `You can add up to ${L.locations} locations.` : undefined}
+          error={errors.targetLocations}
+          disabled={saving}
+          picker={{
+            open: openLocationPicker,
+            buttonRef: locationButtonRef,
+            icon: <MapPin size={15} aria-hidden="true" />,
+          }}
+        />
       </div>
 
       <div className="cmp-cell cmp-cell--full">

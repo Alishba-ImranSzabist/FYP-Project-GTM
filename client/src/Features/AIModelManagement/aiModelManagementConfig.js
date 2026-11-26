@@ -1,6 +1,5 @@
 import {
   Plug,
-  Cpu,
   FileText,
   SlidersHorizontal,
   Activity,
@@ -15,29 +14,20 @@ export const AI_MODEL_MANAGEMENT_OPTIONS = Object.freeze([
   {
     id: "providers",
     title: "AI Provider Configuration",
-    description: "Connect Google Gemini and Anthropic, manage API credentials, endpoints and request quotas.",
-    detail: "Provider credentials and connection settings",
+    description: "View Gemini provider setup, active model and runtime limits.",
+    detail: "Server provider and model settings",
     icon: Plug,
     routeKey: "aiProviderConfiguration",
     number: "01",
   },
   {
-    id: "models",
-    title: "AI Model Configuration",
-    description: "Assign Gemini Flash to Fast and Claude Sonnet to Detailed, then tune model behaviour.",
-    detail: "Fast and Detailed model profiles",
-    icon: Cpu,
-    routeKey: "aiModelConfiguration",
-    number: "02",
-  },
-  {
     id: "recommendations",
     title: "AI Recommendation Configuration",
-    description: "Add, remove and enable recommendation sections, and manage output quality rules.",
-    detail: "Recommendation sections and output rules",
+    description: "Choose which recommendation sections to generate and publish changes.",
+    detail: "Published recommendation sections",
     icon: SlidersHorizontal,
     routeKey: "aiRecommendationConfiguration",
-    number: "03",
+    number: "02",
   },
   {
     id: "prompts",
@@ -46,22 +36,21 @@ export const AI_MODEL_MANAGEMENT_OPTIONS = Object.freeze([
     detail: "System instructions and recommendation prompts",
     icon: FileText,
     routeKey: "aiPromptConfiguration",
-    number: "04",
+    number: "03",
   },
   {
     id: "usage",
     title: "AI Usage & Logs",
-    description: "See which users use AI, which model they use and how many requests and tokens they consume.",
+    description: "Review saved plans and recent generation outcomes.",
     detail: "User-level AI usage summary",
     icon: Activity,
     routeKey: "aiUsageLogs",
-    number: "05",
+    number: "04",
   },
 ]);
 
 export const AI_PROVIDER_OPTIONS = Object.freeze([
   { value: "google", label: "Google Gemini" },
-  { value: "anthropic", label: "Anthropic Claude" },
 ]);
 
 export const AI_PROVIDER_PRESETS = Object.freeze({
@@ -69,11 +58,6 @@ export const AI_PROVIDER_PRESETS = Object.freeze({
     label: "Google Gemini",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/models",
     modelId: "gemini-2.5-flash",
-  },
-  anthropic: {
-    label: "Anthropic Claude",
-    baseUrl: "https://api.anthropic.com/v1",
-    modelId: "claude-3-5-sonnet",
   },
 });
 
@@ -83,18 +67,10 @@ export const DEFAULT_MODEL_SETTINGS = Object.freeze({
     modelId: "gemini-2.5-flash",
     temperature: "0.3",
     maxTokens: "1000",
-    timeoutSeconds: "60",
+    timeoutSeconds: "30",
     enabled: true,
   },
-  detailed: {
-    provider: "anthropic",
-    modelId: "claude-3-5-sonnet",
-    temperature: "0.3",
-    maxTokens: "4000",
-    timeoutSeconds: "120",
-    enabled: true,
-  },
-  retryAttempts: "3",
+  retryAttempts: "2",
   fallbackModel: "fast",
 });
 

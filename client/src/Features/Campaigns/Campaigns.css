@@ -166,6 +166,14 @@
   color: var(--color-ink);
 }
 .cmp-chipbox__input::placeholder { color: var(--color-primary); }
+.cmp-location-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-primary);
+}
+.cmp-location-trigger:disabled { opacity: 0.6; cursor: default; }
+.cmp-wizard[hidden] { display: none; }
 .cmp-chipbox__input:focus {
   outline: none;
   border-style: solid;

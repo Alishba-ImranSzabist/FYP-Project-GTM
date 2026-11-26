@@ -9,7 +9,7 @@ import {
   Search,
   Users,
 } from "lucide-react";
-import { AI_RECOMMENDATION_SECTIONS } from "../recommendationSettings.js";
+import { formatRecommendationChannel, AI_RECOMMENDATION_SECTIONS } from "../recommendationSettings.js";
 
 const SECTION_ICONS = {
   audience: Users,
@@ -30,11 +30,11 @@ function AudienceSection({ section }) {
         <article className="air-audience-item" key={item.title}>
           <div className="air-audience-item__top">
             <span className="air-item-label">{item.label}</span>
-            <strong>{item.match}%</strong>
+            {item.match != null && <strong>{item.match}% estimated fit</strong>}
           </div>
           <h4>{item.title}</h4>
           <p>{item.description}</p>
-          <div className="air-progress"><span style={{ width: `${item.match}%` }} /></div>
+          {item.match != null && <div className="air-progress"><span style={{ width: `${item.match}%` }} /></div>}
           <small>{item.reason}</small>
         </article>
       ))}
@@ -47,13 +47,8 @@ function ChannelsSection({ section }) {
     <div className="air-channel-grid">
       {section.items.map((item) => (
         <article className="air-channel-item" key={item.title}>
-          <div className="air-channel-item__top">
-            <h4>{item.title}</h4>
-            <span className={`air-priority air-priority--${item.priority === "High priority" ? "high" : "normal"}`}>
-              {item.priority}
-            </span>
-          </div>
-          <strong>{item.purpose}</strong>
+          <h4>{formatRecommendationChannel(item.title)}</h4>
+          {item.purpose && !item.purpose.includes("_") && <strong>{item.purpose}</strong>}
           <p>{item.formats}</p>
           <small>{item.reason}</small>
         </article>
@@ -63,14 +58,26 @@ function ChannelsSection({ section }) {
 }
 
 function BudgetSection({ section }) {
+  if (!section.allocations.length) {
+    return (
+      <div className="air-budget-layout">
+        <div className="air-budget-range">
+          <span>Saved campaign budget</span>
+          <strong>{section.range?.max == null ? "Awaiting Gemini estimate" : money(section.range.max, section.currency)}</strong>
+        </div>
+        <p className="air-inline-note">{section.note}</p>
+      </div>
+    );
+  }
+
   const total = section.allocations.reduce((sum, item) => sum + item.amount, 0);
 
   return (
     <div className="air-budget-layout">
       <div className="air-budget-range">
-        <span>Suggested total budget range</span>
+        <span>AI-estimated total budget range</span>
         <strong>{money(section.range.min, section.currency)} – {money(section.range.max, section.currency)}</strong>
-        <div className="air-budget-track" aria-hidden="true"><span /></div>
+        {section.pilotSpend != null && <strong>Suggested pilot {money(section.pilotSpend, section.currency)}</strong>}
         <small>Illustrative midpoint: {money(total, section.currency)}</small>
       </div>
       <div className="air-allocation-list">
@@ -93,10 +100,9 @@ function BudgetSection({ section }) {
 function ContentSection({ section }) {
   return (
     <div className="air-content-grid">
-      {section.pillars.map((item, index) => (
+      {section.pillars.map((item) => (
         <article className="air-content-item" key={item.title}>
-          <span className="air-content-item__number">0{index + 1}</span>
-          <span className="air-item-label">{item.goal}</span>
+              <span className="air-item-label">{item.goal}</span>
           <h4>{item.title}</h4>
           <p>{item.format}</p>
           <strong>Hook</strong>
@@ -137,7 +143,7 @@ function ScheduleSection({ section }) {
     <div className="air-schedule-layout">
       <div className="air-schedule-meta">
         <div><span>Campaign duration</span><strong>{section.duration}</strong></div>
-        <div><span>Suggested posting windows</span><strong>{section.windows.join(" · ")}</strong></div>
+        <div><span>Suggested posting windows</span><strong>{section.windows.join(" \u00b7 ") || "Use your account analytics to choose posting times."}</strong></div>
       </div>
       <div className="air-week-grid">
         {section.weeks.map((week) => (
@@ -178,45 +184,34 @@ function CustomSection({ section }) {
 
 
 function EvidencePanel({ evidence }) {
-  if (!evidence) return null;
-
-  const examples = Array.isArray(evidence.examples) ? evidence.examples : [];
+  const examples = evidence?.examples;
+  if (!Array.isArray(examples) || examples.length === 0) return null;
 
   return (
-    <aside className="air-evidence-panel" aria-label="Evidence and context">
-      <div className="air-evidence-panel__heading">
-        <strong>Evidence and context</strong>
-        <span>{examples.length} approved example{examples.length === 1 ? "" : "s"} cited</span>
-      </div>
+    <details className="air-evidence-panel">
+      <summary>Strategy references ({examples.length})</summary>
 
-      {examples.length > 0 ? (
-        <ul className="air-evidence-panel__list">
-          {examples.map((example) => (
-            <li key={example.exampleId}>
-              <div>
-                <strong>{example.sourceTitle || example.campaignName}</strong>
-                {example.publisher ? <span>{example.publisher}</span> : null}
-                <small>Example ID: {example.exampleId}</small>
-                {example.limitations?.length > 0 ? (
-                  <small>Limitations: {example.limitations.join("; ")}</small>
-                ) : null}
-              </div>
-              {example.sourceUrl ? (
-                <a href={example.sourceUrl} target="_blank" rel="noreferrer">
-                  View source
-                </a>
+      <ul className="air-evidence-panel__list">
+        {examples.map((example) => (
+          <li key={example.exampleId}>
+            <div>
+              <strong>{example.sourceTitle || example.campaignName}</strong>
+              {example.publisher ? <span>{example.publisher}</span> : null}
+              <small>Example ID: {example.exampleId}</small>
+              {example.limitations?.length > 0 ? (
+                <small>Limitations: {example.limitations.join("; ")}</small>
               ) : null}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="air-evidence-panel__empty">
-          No approved campaign example was directly cited for this section.
-        </p>
-      )}
-
+            </div>
+            {example.sourceUrl ? (
+              <a href={example.sourceUrl} target="_blank" rel="noreferrer">
+                View source
+              </a>
+            ) : null}
+          </li>
+        ))}
+      </ul>
       {evidence.note ? <p className="air-evidence-panel__note">{evidence.note}</p> : null}
-    </aside>
+    </details>
   );
 }
 
@@ -229,8 +224,7 @@ export default function RecommendationSection({ section }) {
       <div className="air-recommendation-section__head">
         <span className="air-section-icon"><Icon size={18} /></span>
         <div>
-          <span className="air-kicker">RECOMMENDATION {meta?.number || ""}</span>
-          <h3 id={`air-section-${section.id}`}>{section.title || meta?.title || section.id}</h3>
+          <h1 id={`air-section-${section.id}`}>{section.title || meta?.title || section.id}</h1>
           <p>{section.summary}</p>
         </div>
       </div>

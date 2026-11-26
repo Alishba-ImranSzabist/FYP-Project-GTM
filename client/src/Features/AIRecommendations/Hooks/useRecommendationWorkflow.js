@@ -94,39 +94,41 @@ export default function useRecommendationWorkflow() {
 
     const requestId = ++latestGeneration.current;
     setGenerating(true);
-    setReviewStatus("pending");
     setError("");
     setNotice("");
 
     try {
-      const data = await recommendationApiService.generate({ campaign: selectedCampaign, model, recommendationStyle });
+      const data = await recommendationApiService.generate({
+        campaign: selectedCampaign,
+        model,
+        recommendationStyle,
+        previousRecommendationId: recommendation?.id,
+      });
       if (requestId !== latestGeneration.current) return false;
       if (!data?.recommendation?.sections?.length) {
         throw new Error("The recommendation response was incomplete. Please try again.");
       }
       setRecommendation(data.recommendation);
       setReviewStatus(data.recommendation.reviewStatus || data.recommendation.status || "pending");
+      if (data.recommendation.reused) {
+        setNotice("Gemini is still unavailable. Your existing plan and review status were kept.");
+      }
       return true;
     } catch (err) {
       if (requestId === latestGeneration.current) {
-        setError(err.message || "Recommendations could not be generated. Please try again.");
+        const unavailable = [502, 503, 504].includes(err.status);
+        setError(unavailable && recommendation
+          ? "A new plan could not be generated. Your current plan is still available."
+          : err.message || "Recommendations could not be generated. Please try again.");
       }
       return false;
     } finally {
       if (requestId === latestGeneration.current) setGenerating(false);
     }
-  }, [model, recommendationStyle, selectedCampaign]);
-
-  const changeModel = useCallback(() => {
-    latestGeneration.current += 1;
-    setRecommendation(null);
-    setReviewStatus("pending");
-    setError("");
-    setNotice("");
-  }, []);
+  }, [model, recommendation?.id, recommendationStyle, selectedCampaign]);
 
   const saveDraft = useCallback(async () => {
-    if (!recommendation?.id) return false;
+    if (!recommendation?.id || reviewStatus === "approved" || reviewStatus === "draft") return false;
     setError("");
     setNotice("");
     try {
@@ -140,7 +142,7 @@ export default function useRecommendationWorkflow() {
       setError(err.message || "The recommendation draft could not be saved.");
       return false;
     }
-  }, [recommendation]);
+  }, [recommendation, reviewStatus]);
 
   const approve = useCallback(async () => {
     if (!recommendation?.id) return false;
@@ -178,7 +180,6 @@ export default function useRecommendationWorkflow() {
     selectModel,
     selectRecommendationStyle,
     generate,
-    changeModel,
     saveDraft,
     approve,
     refreshCampaigns,
