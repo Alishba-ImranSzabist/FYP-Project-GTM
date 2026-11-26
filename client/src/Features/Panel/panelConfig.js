@@ -27,7 +27,8 @@ const business = {
         { label: "Dashboard", icon: LayoutDashboard, to: ROUTES.dashboard },
         { label: "Campaigns", icon: Megaphone, to: ROUTES.campaigns },
         { label: "AI Recommendations", icon: Sparkles, to: ROUTES.aiRecommendations },
-        { label: "Data & Enrichment", icon: Database },
+        { label: "Data & Enrichment", icon: Database, to: ROUTES.dataEnrichment },
+        
         { label: "Lead Qualification", icon: UserCheck },
         { label: "Lead Pipeline", icon: GitBranch },
       ],
@@ -81,7 +82,7 @@ const provider = {
       items: [
         { label: "Provider Dashboard", icon: LayoutDashboard, to: ROUTES.dashboard },
         { label: "Service Setup", icon: Settings, to: ROUTES.services },
-        { label: "Opportunity Discovery", icon: Target },
+        { label: "Opportunity Discovery", icon: Target, to: ROUTES.opportunities },
         { label: "Matched Leads", icon: Users },
         { label: "Outreach Review", icon: Send },
         { label: "Reply Inbox", icon: Inbox, badge: 4 },
@@ -119,7 +120,7 @@ const admin = {
   eyebrow: "Platform control center",
   title: "Admin overview",
   subtitle: "Monitor users, AI quality and commercial performance.",
-  cta: { label: "Manage AI models", icon: Cpu, to: ROUTES.aiModelManagement },
+  cta: { label: "Manage AI models", icon: Cpu },
   nav: [
     {
       section: "Platform",
@@ -129,7 +130,7 @@ const admin = {
         { label: "Subscription & Billing", icon: CreditCard },
         { label: "Feedback", icon: ThumbsUp },
         { label: "Usage Analytics", icon: BarChart3 },
-        { label: "AI Model Management", icon: Sparkles, to: ROUTES.aiModelManagement },
+        { label: "AI Model Management", icon: Sparkles },
       ],
     },
   ],
