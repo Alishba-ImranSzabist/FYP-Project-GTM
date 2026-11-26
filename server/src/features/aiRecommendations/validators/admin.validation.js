@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { MAX_RECOMMENDATION_SECTIONS } from "../constants/recommendation.constants.js";
 
-const objectId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid MongoDB id.");
 
 const sectionSchema = z
   .object({
@@ -40,22 +39,3 @@ export const updateRecommendationConfigSchema = z
       });
     }
   });
-
-export const adminExampleListQuerySchema = z.object({
-  reviewStatus: z
-    .enum(["pending_admin_review", "approved", "rejected", "all"])
-    .default("pending_admin_review"),
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-});
-
-export const adminExampleIdParamsSchema = z.object({
-  id: objectId,
-});
-
-export const reviewExampleSchema = z
-  .object({
-    action: z.enum(["approve", "reject"]),
-    comment: z.string().trim().max(1000).optional().default(""),
-  })
-  .strict();
