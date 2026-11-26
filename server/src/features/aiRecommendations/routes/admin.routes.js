@@ -6,14 +6,8 @@ import { sendSuccess } from "../../../utils/response.js";
 import { AIRecommendationAttempt } from "../models/aiRecommendationAttempt.model.js";
 import { AIRecommendation } from "../models/aiRecommendation.model.js";
 import { User, USER_ROLES } from "../../users/user.model.js";
-import * as exampleController from "../controllers/admin/campaignExampleAdmin.controller.js";
 import * as configController from "../controllers/admin/recommendationConfigAdmin.controller.js";
-import {
-  adminExampleIdParamsSchema,
-  adminExampleListQuerySchema,
-  reviewExampleSchema,
-  updateRecommendationConfigSchema,
-} from "../validators/admin.validation.js";
+import { updateRecommendationConfigSchema } from "../validators/admin.validation.js";
 
 const router = Router();
 
@@ -63,19 +57,6 @@ router.put(
   "/config",
   validate(updateRecommendationConfigSchema),
   configController.updateConfig
-);
-
-router.get(
-  "/examples",
-  validate(adminExampleListQuerySchema, "query"),
-  exampleController.list
-);
-
-router.patch(
-  "/examples/:id/review",
-  validate(adminExampleIdParamsSchema, "params"),
-  validate(reviewExampleSchema),
-  exampleController.review
 );
 
 export default router;
