@@ -15,6 +15,7 @@ export default function ChipInput({
   error,
   hint,
   disabled,
+  picker,
 }) {
   const inputId = useId();
   const [draft, setDraft] = useState("");
@@ -65,7 +66,20 @@ export default function ChipInput({
             </button>
           </span>
         ))}
-        <input
+        {picker ? (
+          <button
+            ref={picker.buttonRef}
+            id={inputId}
+            type="button"
+            className="cmp-chipbox__input cmp-location-trigger"
+            disabled={disabled || values.length >= max}
+            aria-describedby={message ? `${inputId}-msg` : undefined}
+            onClick={picker.open}
+          >
+            {picker.icon}
+            {placeholder}
+          </button>
+        ) : <input
           id={inputId}
           type="text"
           className="cmp-chipbox__input"
@@ -81,7 +95,7 @@ export default function ChipInput({
           }}
           onKeyDown={handleKeyDown}
           onBlur={add}
-        />
+        />}
       </div>
       {message && (
         <p id={`${inputId}-msg`} className={hasError ? "field__error" : "field__hint"}>

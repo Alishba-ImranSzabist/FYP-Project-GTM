@@ -100,7 +100,7 @@ export async function request(path, { method = "GET", body, headers = {} } = {})
 }
 
 export const recommendationApiService = {
-  generate: ({ campaign, model, recommendationStyle = "balanced" }) => {
+  generate: ({ campaign, model, recommendationStyle = "balanced", previousRecommendationId }) => {
     if (!campaign?.id) {
       return Promise.reject(new ApiError("Select a saved campaign first."));
     }
@@ -111,6 +111,7 @@ export const recommendationApiService = {
         campaignId: campaign.id,
         model,
         recommendationStyle,
+        previousRecommendationId,
       },
     });
   },

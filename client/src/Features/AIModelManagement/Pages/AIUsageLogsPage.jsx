@@ -1,51 +1,78 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Coins, Search, Sparkles, Users } from "lucide-react";
 import FormField from "../../../Shared_Components/FormField";
 import AIModelManagementLayout from "../components/AIModelManagementLayout";
 import ConfigPageHeader from "../components/ConfigPageHeader";
 import { ConfigPanel, FeedbackMessage } from "../components/ConfigControls";
 
-/**
- * Frontend-only usage view. Replace the empty array with records from the
- * authenticated admin usage API when that endpoint is implemented.
- * One row should represent one user + model combination.
- */
-const usageRecords = [];
+import { request } from "../../AIRecommendations/Services/recommendationApi.service";
 
 const formatCount = (value) => Number(value || 0).toLocaleString();
 
+const outcomeLabels = {
+  gemini: "Gemini plan saved",
+  fallback: "Rules-based plan saved",
+  reused: "Existing plan kept",
+  failed: "Generation failed",
+};
+
+function providerResult(attempt) {
+  if (attempt.providerStatus === 429) return "429 - Quota or rate limit";
+  if (attempt.providerStatus === 503) return "503 - Provider unavailable";
+  if (attempt.providerStatus === 200) return "200 - Response received";
+  if (attempt.providerStatus) return `HTTP ${attempt.providerStatus}`;
+  if (attempt.errorStatus === 504) return "Request timed out";
+  if (attempt.errorStatus) return `App error ${attempt.errorStatus}`;
+  return "Skipped during cooldown";
+}
+
 export default function AIUsageLogsPage() {
   const [search, setSearch] = useState("");
+  const [usageRecords, setUsageRecords] = useState([]);
+  const [attempts, setAttempts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    request("/ai-recommendations/admin/usage")
+      .then(({ records, attempts }) => {
+        if (!active) return;
+        setUsageRecords(records);
+        setAttempts(attempts ?? []);
+      })
+      .catch((err) => { if (active) setError(err.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   const filteredRecords = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return usageRecords;
     return usageRecords.filter((record) =>
-      [record.userId, record.userName, record.modelName, record.modelProfile]
+      [record.userId, record.userName, record.modelName, record.provider === "rules" ? "rules-based" : "gemini"]
         .some((value) => String(value || "").toLowerCase().includes(query))
     );
-  }, [search]);
+  }, [search, usageRecords]);
 
   const totalUsers = new Set(usageRecords.map((record) => record.userId)).size;
   const totalRequests = usageRecords.reduce((total, record) => total + Number(record.requestCount || 0), 0);
   const totalTokens = usageRecords.reduce((total, record) => total + Number(record.totalTokens || 0), 0);
 
   const stats = [
-    { label: "Total users", value: usageRecords.length ? formatCount(totalUsers) : "—", note: "Users who used AI", icon: Users },
-    { label: "AI requests", value: usageRecords.length ? formatCount(totalRequests) : "—", note: "Total model requests", icon: Sparkles },
-    { label: "Tokens consumed", value: usageRecords.length ? formatCount(totalTokens) : "—", note: "Input + output tokens", icon: Coins },
+    { label: "Total users", value: usageRecords.length ? formatCount(totalUsers) : "—", note: "Users with saved plans", icon: Users },
+    { label: "Recommendations", value: usageRecords.length ? formatCount(totalRequests) : "—", note: "Saved recommendations", icon: Sparkles },
+    { label: "Total Gemini tokens used", value: usageRecords.length ? formatCount(totalTokens) : "—", note: "Input and output tokens reported for saved plans", icon: Coins },
   ];
 
   return (
-    <AIModelManagementLayout>
+    <AIModelManagementLayout className="aimm-usage-page">
       <ConfigPageHeader
         title="AI Usage & Logs"
-        description="See which users use AI, which model they use, and how many requests and tokens they consume."
+        description="Review saved plans, Gemini token usage and recent generation attempts."
       />
 
-      <FeedbackMessage type="info">
-        Usage figures will appear when the backend usage API records each AI request. No sample or estimated user activity is shown here.
-      </FeedbackMessage>
+      {error && <FeedbackMessage type="error">{error}</FeedbackMessage>}
 
       <div className="aimm-usage-stats aimm-usage-stats--simple">
         {stats.map((stat) => {
@@ -62,8 +89,8 @@ export default function AIUsageLogsPage() {
       </div>
 
       <ConfigPanel
-        title="User usage"
-        description="A row represents one user and the model profile they used. If a user used both models, they will have a separate row for each model."
+        title="Saved recommendations"
+        description="Gemini and rules-based plans saved by each user over the last 30 days."
       >
         <div className="aimm-usage-search">
           <FormField
@@ -81,20 +108,20 @@ export default function AIUsageLogsPage() {
               <tr>
                 <th>User ID</th>
                 <th>User name</th>
-                <th>Model used</th>
-                <th>Requests</th>
+                <th>Generation source</th>
+                <th>Recommendations</th>
                 <th>Tokens used</th>
                 <th>Last used</th>
               </tr>
             </thead>
             <tbody>
               {filteredRecords.length ? filteredRecords.map((record) => (
-                <tr key={`${record.userId}-${record.modelProfile || record.modelName}`}>
+                <tr key={`${record.userId}-${record.provider + "-" + record.modelName}`}>
                   <td>{record.userId || "—"}</td>
                   <td>{record.userName || "—"}</td>
                   <td>
                     <span className="aimm-usage-model-badge">
-                      {record.modelName || (record.modelProfile === "fast" ? "Gemini Flash" : record.modelProfile === "detailed" ? "Claude Sonnet" : "Unknown model")}
+                      {record.provider === "rules" ? "Rules-based plan" : record.modelName || "Gemini"}
                     </span>
                   </td>
                   <td>{formatCount(record.requestCount)}</td>
@@ -104,9 +131,35 @@ export default function AIUsageLogsPage() {
               )) : (
                 <tr>
                   <td colSpan={6} className="aimm-usage-table__empty">
-                    {search ? "No matching user usage records found." : "No user usage records are available yet. Records will appear here after the backend logging API is connected."}
+                    {loading ? "Loading usage..." : error || (search ? "No matching user usage records found." : "No recommendations were saved in the last 30 days.")}
                   </td>
                 </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </ConfigPanel>
+      <ConfigPanel
+        title="Recent generation attempts"
+        description="Up to 50 recent attempts. Provider tokens are shown when reported."
+      >
+        <div className="aimm-usage-table-wrap">
+          <table className="aimm-usage-table">
+            <thead>
+              <tr><th>Time</th><th>Campaign</th><th>Gemini model</th><th>Provider result</th><th>Plan outcome</th><th>Tokens</th></tr>
+            </thead>
+            <tbody>
+              {attempts.length ? attempts.map((attempt) => (
+                <tr key={attempt._id}>
+                  <td>{new Date(attempt.createdAt).toLocaleString()}</td>
+                  <td>{attempt.campaignName}</td>
+                  <td>{attempt.model}</td>
+                  <td>{providerResult(attempt)}</td>
+                  <td>{outcomeLabels[attempt.outcome]}{attempt.providerStatus && attempt.errorStatus && attempt.outcome === "failed" ? ` (app ${attempt.errorStatus})` : ""}</td>
+                  <td>{attempt.totalTokens == null ? "Unavailable" : formatCount(attempt.totalTokens)}</td>
+                </tr>
+              )) : (
+                <tr><td colSpan={6} className="aimm-usage-table__empty">{loading ? "Loading attempts..." : error || "Attempts will appear after the next generation request."}</td></tr>
               )}
             </tbody>
           </table>

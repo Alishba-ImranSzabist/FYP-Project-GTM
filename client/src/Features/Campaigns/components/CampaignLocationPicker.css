@@ -1,0 +1,224 @@
+.cmp-location-picker {
+  max-width: 74rem;
+  margin-inline: auto;
+}
+
+.cmp-location-picker__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cmp-location-picker__body.pnl-card {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) minmax(0, 2fr);
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid var(--color-primary);
+}
+
+.cmp-location-picker__sidebar { min-width: 0; padding: 1.25rem; }
+.cmp-location-picker__sidebar h1 { font-size: var(--text-xl); margin: 0 0 1rem; }
+.cmp-location-picker__sidebar h1:focus { outline: none; }
+.cmp-location-picker__search { display: grid; gap: 0.5rem; }
+.cmp-location-picker__search label,
+#campaign-city-label { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.cmp-location-picker__city {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 0.4rem;
+}
+.cmp-location-picker__city summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem;
+  border: 1px solid var(--color-primary-deep);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  list-style: none;
+  cursor: pointer;
+}
+.cmp-location-picker__city summary::-webkit-details-marker { display: none; }
+.cmp-location-picker__city summary svg { color: var(--color-primary); }
+.cmp-location-picker__city ul {
+  position: absolute;
+  inset: calc(100% + 0.35rem) 0 auto;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  max-height: 15rem;
+  overflow-y: auto;
+  border: 1px solid var(--color-primary-deep);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  box-shadow: var(--shadow-md);
+}
+.cmp-location-picker__city li button {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  text-align: left;
+}
+.cmp-location-picker__city li button:hover { background: var(--color-cream-50); }
+.cmp-location-picker__city li button[aria-pressed="true"] {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-deep);
+}
+.cmp-location-picker__search-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+.cmp-location-picker__search-field {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+}
+.cmp-location-picker__search-field input {
+  width: 100%;
+  height: 100%;
+  padding: 0.65rem 2rem 0.65rem 0.65rem;
+  border: 1px solid var(--color-primary-deep);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  font-size: var(--text-sm);
+}
+.cmp-location-picker__search-field button {
+  position: absolute;
+  right: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.2rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary-deep);
+}
+.cmp-location-picker__search-row .btn {
+  flex: none;
+  gap: 0.35rem;
+  padding-inline: 0.7rem;
+  white-space: nowrap;
+  box-shadow: none;
+  --btn-bg: var(--color-primary-deep);
+}
+.cmp-location-picker__search-row .btn:disabled {
+  --btn-bg: var(--color-primary-tint);
+  --btn-fg: var(--color-primary-deep);
+  opacity: 1;
+}
+.cmp-location-picker__search-row .btn svg { width: 15px; height: 15px; }
+.cmp-location-picker__status {
+  margin: 0.75rem 0;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+.cmp-location-picker__results {
+  display: grid;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 22rem;
+  overflow: auto;
+}
+.cmp-location-picker__results button {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.65rem;
+  border: 1px solid var(--color-primary-deep);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.cmp-location-picker__results button:hover,
+.cmp-location-picker__results button[aria-pressed="true"] { background: var(--color-primary-tint); }
+.cmp-location-picker__results button:focus-visible { outline-offset: -2px; }
+.cmp-location-picker__results svg { flex: none; color: var(--color-primary); }
+.cmp-location-picker__results small { display: block; color: var(--color-muted); }
+.cmp-location-picker__map {
+  position: relative;
+  isolation: isolate;
+  min-height: 34rem;
+  border-inline-start: 1px solid var(--color-primary);
+}
+.cmp-location-picker__map > .leaflet-container {
+  position: absolute;
+  inset: 0;
+  background: var(--color-primary-tint);
+  cursor: crosshair;
+}
+.cmp-location-picker__tile-error {
+  position: absolute;
+  z-index: 500;
+  right: 0.65rem;
+  bottom: 1.4rem;
+  left: 0.65rem;
+  padding: 0.55rem;
+  background: var(--color-white);
+  font-size: var(--text-sm);
+}
+.cmp-map-pin::before {
+  content: "";
+  position: absolute;
+  inset: 0 1px 6px;
+  transform: rotate(-45deg);
+  border: 2px solid white;
+  border-radius: 50% 50% 50% 0;
+  background: var(--color-primary);
+  box-shadow: 0 2px 5px #0005;
+}
+.cmp-map-pin::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+}
+.cmp-map-pin.is-selected::before { background: var(--color-primary-deep); }
+.leaflet-tooltip.cmp-map-neighbourhood,
+.leaflet-tooltip.cmp-map-result-label {
+  width: max-content;
+  border: 1px solid var(--color-primary);
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.45rem;
+  background: var(--color-white);
+  color: var(--color-primary-deep);
+  font: 700 0.875rem/1.25 system-ui, sans-serif;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.leaflet-tooltip.cmp-map-result-label {
+  background: var(--color-primary-deep);
+  color: var(--color-white);
+}
+.cmp-map-result-label.leaflet-tooltip-top::before {
+  border-top-color: var(--color-primary-deep);
+}
+@media (max-width: 760px) {
+  .cmp-location-picker__body.pnl-card { grid-template-columns: minmax(0, 1fr); }
+  .cmp-location-picker__results { max-height: 12rem; }
+  .cmp-location-picker__map {
+    min-height: 22rem;
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--color-primary);
+  }
+}

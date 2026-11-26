@@ -1,9 +1,10 @@
 import { BadgeCheck, Coins, Users } from "lucide-react";
+import { formatRecommendationChannel } from "../recommendationSettings.js";
 
 const formatMoney = (value, currency = "PKR") =>
   `${currency} ${Number(value || 0).toLocaleString("en-US")}`;
 
-export default function RecommendationSummary({ overview }) {
+export default function RecommendationSummary({ overview, fallback, savedBudget }) {
   if (!overview) return null;
 
   return (
@@ -13,25 +14,24 @@ export default function RecommendationSummary({ overview }) {
         <strong>{overview.audience}</strong>
         <div className="air-summary-card__foot">
           <span>{overview.targetLocations}</span>
-          <b>{overview.audienceMatch}% match</b>
+          {overview.audienceMatch != null && <b>{overview.audienceMatch}% estimated fit</b>}
         </div>
       </article>
 
       <article className="air-summary-card">
-        <span className="air-summary-card__label"><Coins size={15} /> SUGGESTED BUDGET</span>
-        <strong>{formatMoney(overview.budgetMin, overview.currency)} – {formatMoney(overview.budgetMax, overview.currency)}</strong>
+        <span className="air-summary-card__label"><Coins size={15} /> {fallback ? "SAVED CAMPAIGN BUDGET" : "AI-ESTIMATED BUDGET"}</span>
+        <strong>{overview.budgetMin == null ? "Awaiting Gemini estimate" : fallback ? formatMoney(overview.budgetMax, overview.currency) : `${formatMoney(overview.budgetMin, overview.currency)} \u2013 ${formatMoney(overview.budgetMax, overview.currency)}`}</strong>
         <div className="air-summary-card__foot">
-          <span>Estimated planning range</span>
-          <b>Review before use</b>
+          {!fallback && <span>Estimated planning range</span>}
+          {!fallback && savedBudget != null && <b>Saved budget {formatMoney(savedBudget, overview.currency)}</b>}
         </div>
       </article>
 
       <article className="air-summary-card">
-        <span className="air-summary-card__label"><BadgeCheck size={15} /> TOP CHANNELS</span>
-        <strong>{overview.topChannel}</strong>
+        <span className="air-summary-card__label"><BadgeCheck size={15} /> {fallback ? "CAMPAIGN CHANNELS" : "TOP CHANNELS"}</span>
+        <strong>{overview.topChannel?.split(/\s*\+\s*/).map(formatRecommendationChannel).join(" + ")}</strong>
         <div className="air-summary-card__foot">
-          <span>Suggested starting mix</span>
-          <b>Test and compare</b>
+          <span>{fallback ? "From campaign settings" : "Suggested starting mix"}</span>
         </div>
       </article>
     </div>

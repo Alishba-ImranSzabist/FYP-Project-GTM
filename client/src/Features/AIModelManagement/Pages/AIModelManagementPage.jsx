@@ -20,11 +20,10 @@ export default function AIModelManagementPage() {
         <div className="aimm-routing-banner__icon"><Info size={19} /></div>
         <div className="aimm-routing-banner__copy">
           <strong>Model assignments for business recommendations</strong>
-          <p>Fast uses Google Gemini Flash. Detailed uses Anthropic Claude Sonnet. You can adjust model settings in AI Model Configuration.</p>
+          <p>View the current model and runtime limits in AI Provider Configuration.</p>
         </div>
         <div className="aimm-routing-pills">
           <span><b>Fast</b> Gemini Flash</span>
-          <span><b>Detailed</b> Claude Sonnet</span>
         </div>
       </section>
 

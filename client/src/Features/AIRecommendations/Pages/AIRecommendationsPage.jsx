@@ -44,7 +44,7 @@ export default function AIRecommendationsPage() {
             generating={feature.generating}
             error={feature.error}
             notice={feature.notice}
-            onChangeModel={feature.changeModel}
+            onChangeStyle={feature.selectRecommendationStyle}
             onRegenerate={feature.generate}
             onSaveDraft={feature.saveDraft}
             onApprove={feature.approve}
@@ -55,7 +55,7 @@ export default function AIRecommendationsPage() {
               <div className="pnl__head-text">
                 <span className="pnl__eyebrow">BUSINESS WORKSPACE · AI PLANNING</span>
                 <h1>AI Recommendations</h1>
-                <p>Choose a campaign and an AI model to build a practical go-to-market plan.</p>
+                <p>Choose a campaign and generate a practical go-to-market plan with Gemini.</p>
               </div>
               <span className="air-preview-badge"><Sparkles size={14} /> AI-powered planning</span>
             </div>

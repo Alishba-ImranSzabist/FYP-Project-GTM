@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import SignupSuccessPage from "./Features/Panel/Pages/SignupSuccessPage";
 import ProfilePage from "./Features/Panel/Pages/ProfilePage";
@@ -10,7 +10,6 @@ import CampaignWizardPage from "./Features/Campaigns/Pages/CampaignWizardPage";
 import AIRecommendationsPage from "./Features/AIRecommendations/Pages/AIRecommendationsPage";
 import AIModelManagementPage from "./Features/AIModelManagement/Pages/AIModelManagementPage";
 import AIProviderConfigurationPage from "./Features/AIModelManagement/Pages/AIProviderConfigurationPage";
-import AIModelConfigurationPage from "./Features/AIModelManagement/Pages/AIModelConfigurationPage";
 import AIPromptConfigurationPage from "./Features/AIModelManagement/Pages/AIPromptConfigurationPage";
 import AIRecommendationConfigurationPage from "./Features/AIModelManagement/Pages/AIRecommendationConfigurationPage";
 import AIUsageLogsPage from "./Features/AIModelManagement/Pages/AIUsageLogsPage";
@@ -68,7 +67,7 @@ export default function App() {
         {/* Admin only: AI model management */}
         <Route path={ROUTES.aiModelManagement} element={guard(<AIModelManagementPage />, [admin])} />
         <Route path={ROUTES.aiProviderConfiguration} element={guard(<AIProviderConfigurationPage />, [admin])} />
-        <Route path={ROUTES.aiModelConfiguration} element={guard(<AIModelConfigurationPage />, [admin])} />
+        <Route path={ROUTES.aiModelConfiguration} element={guard(<Navigate to={ROUTES.aiProviderConfiguration} replace />, [admin])} />
         <Route path={ROUTES.aiPromptConfiguration} element={guard(<AIPromptConfigurationPage />, [admin])} />
         <Route path={ROUTES.aiRecommendationConfiguration} element={guard(<AIRecommendationConfigurationPage />, [admin])} />
         <Route path={ROUTES.aiUsageLogs} element={guard(<AIUsageLogsPage />, [admin])} />
@@ -90,3 +89,4 @@ export default function App() {
     </>
   );
 }
+

@@ -1,3 +1,4 @@
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../../../Shared_Components/Button";
 import { ROUTES, USER_ROLES } from "../../../constants/routes";
@@ -16,6 +17,8 @@ import "../../Auth/Auth.css";
 import "../../Panel/Panel.css";
 import "../Campaigns.css";
 
+const CampaignLocationPicker = lazy(() => import("../components/CampaignLocationPicker"));
+
 /**
  * /campaigns/new and /campaigns/:id/edit — the 4-step setup wizard.
  * This page only lays things out; the logic is in useCampaignWizard and campaignForm.js.
@@ -26,6 +29,22 @@ export default function CampaignWizardPage() {
   const navigate = useNavigate();
   const wizard = useCampaignWizard(id);
   const config = PANEL_CONFIG[USER_ROLES.business];
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const locationButtonRef = useRef(null);
+  const audienceHeadingRef = useRef(null);
+  const restoreLocationFocus = useRef(false);
+
+  useEffect(() => {
+    if (locationPickerOpen || !restoreLocationFocus.current) return;
+    restoreLocationFocus.current = false;
+    const button = locationButtonRef.current;
+    (button && !button.disabled ? button : audienceHeadingRef.current)?.focus();
+  }, [locationPickerOpen]);
+
+  const closeLocationPicker = () => {
+    restoreLocationFocus.current = true;
+    setLocationPickerOpen(false);
+  };
 
   const handleLogout = async () => {
     await wizard.flushDraft();
@@ -48,7 +67,13 @@ export default function CampaignWizardPage() {
       case "details":
         return <StepDetails form={wizard} />;
       case "audience":
-        return <StepAudience form={wizard} />;
+        return (
+          <StepAudience
+            form={wizard}
+            openLocationPicker={() => setLocationPickerOpen(true)}
+            locationButtonRef={locationButtonRef}
+          />
+        );
       case "budget":
         return <StepBudget form={wizard} />;
       default:
@@ -58,7 +83,24 @@ export default function CampaignWizardPage() {
 
   return (
     <PanelShell config={config} user={user} onLogout={handleLogout}>
-      <div className="cmp-wizard">
+      {locationPickerOpen && (
+        <Suspense fallback={
+          <div>
+            <Button type="button" variant="ghost" size="sm" onClick={closeLocationPicker}>Back to campaign</Button>
+            <p role="status">Loading map…</p>
+          </div>
+        }>
+          <CampaignLocationPicker
+            locations={values.targetLocations}
+            onBack={closeLocationPicker}
+            onAdd={(location) => {
+              wizard.setValue("targetLocations", [...values.targetLocations, location]);
+              closeLocationPicker();
+            }}
+          />
+        </Suspense>
+      )}
+      <div className="cmp-wizard" hidden={locationPickerOpen}>
         {wizard.loading ? (
           <section className="pnl-card" aria-busy="true" aria-label="Loading campaign">
             <span className="prof__skeleton prof__skeleton--title" />
@@ -79,7 +121,7 @@ export default function CampaignWizardPage() {
             <WizardSteps steps={STEPS} current={stepIndex} onSelect={wizard.goTo} />
 
             <div className="pnl__head-text">
-              <h1 className="cmp-wizard__title">{step.title}</h1>
+              <h1 className="cmp-wizard__title" ref={audienceHeadingRef} tabIndex={-1}>{step.title}</h1>
               <p className="cmp-wizard__intro">{step.intro}</p>
             </div>
 
