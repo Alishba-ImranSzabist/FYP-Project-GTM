@@ -27,7 +27,7 @@ const business = {
         { label: "Dashboard", icon: LayoutDashboard, to: ROUTES.dashboard },
         { label: "Campaigns", icon: Megaphone, to: ROUTES.campaigns },
         { label: "AI Recommendations", icon: Sparkles, to: ROUTES.aiRecommendations },
-        { label: "Data & Enrichment", icon: Database },
+        { label: "Data & Enrichment", icon: Database, to: ROUTES.dataEnrichment },
         { label: "Lead Qualification", icon: UserCheck },
         { label: "Lead Pipeline", icon: GitBranch },
       ],
@@ -81,7 +81,7 @@ const provider = {
       items: [
         { label: "Provider Dashboard", icon: LayoutDashboard, to: ROUTES.dashboard },
         { label: "Service Setup", icon: Settings, to: ROUTES.services },
-        { label: "Opportunity Discovery", icon: Target },
+        { label: "Opportunity Discovery", icon: Target, to: ROUTES.opportunities },
         { label: "Matched Leads", icon: Users },
         { label: "Outreach Review", icon: Send },
         { label: "Reply Inbox", icon: Inbox, badge: 4 },

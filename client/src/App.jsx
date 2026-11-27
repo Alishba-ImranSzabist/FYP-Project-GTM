@@ -7,12 +7,16 @@ import ProtectedRoute from "./Features/Auth/components/ProtectedRoute";
 import DashboardPage from "./Features/Dashboard/Pages/DashboardPage";
 import CampaignsPage from "./Features/Campaigns/Pages/CampaignsPage";
 import CampaignWizardPage from "./Features/Campaigns/Pages/CampaignWizardPage";
+import DataEnrichmentPage from "./Features/DataEnrichment/Pages/DataEnrichmentPage";
+import ApifyScraperSettingsPage from "./Features/DataEnrichment/Pages/ApifyScraperSettingsPage";
 import AIRecommendationsPage from "./Features/AIRecommendations/Pages/AIRecommendationsPage";
 import AIModelManagementPage from "./Features/AIModelManagement/Pages/AIModelManagementPage";
 import AIProviderConfigurationPage from "./Features/AIModelManagement/Pages/AIProviderConfigurationPage";
 import AIPromptConfigurationPage from "./Features/AIModelManagement/Pages/AIPromptConfigurationPage";
 import AIRecommendationConfigurationPage from "./Features/AIModelManagement/Pages/AIRecommendationConfigurationPage";
 import AIUsageLogsPage from "./Features/AIModelManagement/Pages/AIUsageLogsPage";
+import OpportunitiesPage from "./Features/Opportunities/Pages/OpportunitiesPage";
+import OpportunityApifySettingsPage from "./Features/Opportunities/Pages/OpportunityApifySettingsPage";
 import ServicesPage from "./Features/ServiceListings/Pages/ServicesPage";
 import ServiceWizardPage from "./Features/ServiceListings/Pages/ServiceWizardPage";
 import { ROUTES, USER_ROLES } from "./constants/routes";
@@ -62,8 +66,10 @@ export default function App() {
         />
         <Route path={ROUTES.profile} element={guard(<ProfilePage />)} />
         <Route path={ROUTES.dashboard} element={guard(<DashboardPage />)} />
+        <Route path={ROUTES.dataEnrichment} element={guard(<DataEnrichmentPage />, [business])} />
+        <Route path={ROUTES.apifyScrapers} element={guard(<ApifyScraperSettingsPage />, [business])} />
         <Route path={ROUTES.profileSetup} element={guard(<ProfileSetupPage />, [business, serviceProvider])} />
-       
+
         {/* Admin only: AI model management */}
         <Route path={ROUTES.aiModelManagement} element={guard(<AIModelManagementPage />, [admin])} />
         <Route path={ROUTES.aiProviderConfiguration} element={guard(<AIProviderConfigurationPage />, [admin])} />
@@ -76,11 +82,12 @@ export default function App() {
         <Route path={ROUTES.campaigns} element={guard(<CampaignsPage />, [business])} />
         <Route path={ROUTES.campaignNew} element={guard(<CampaignWizardPage />, [business])} />
         <Route path={ROUTES.campaignEdit} element={guard(<CampaignWizardPage />, [business])} />
-
-        <Route path={ROUTES.aiRecommendations} element={guard(<AIRecommendationsPage />, [business])}/>
+        <Route path={ROUTES.aiRecommendations} element={guard(<AIRecommendationsPage />, [business])} />
 
         {/* Service provider only: services */}
         <Route path={ROUTES.services} element={guard(<ServicesPage />, [serviceProvider])} />
+        <Route path={ROUTES.opportunities} element={guard(<OpportunitiesPage />, [serviceProvider])} />
+        <Route path={ROUTES.opportunityApifyScrapers} element={guard(<OpportunityApifySettingsPage />, [serviceProvider])} />
         <Route path={ROUTES.serviceNew} element={guard(<ServiceWizardPage />, [serviceProvider])} />
         <Route path={ROUTES.serviceEdit} element={guard(<ServiceWizardPage />, [serviceProvider])} />
 
